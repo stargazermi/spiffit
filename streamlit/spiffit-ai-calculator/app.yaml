@@ -1,0 +1,14 @@
+# Databricks App Configuration
+# AI Calculator with natural language interface
+
+command: ["streamlit", "run", "app.py", "--server.port", "8000", "--server.address", "0.0.0.0"]
+
+# Environment variables
+env:
+  - name: STREAMLIT_SERVER_HEADLESS
+    value: "true"
+  - name: STREAMLIT_BROWSER_GATHER_USAGE_STATS
+    value: "false"
+  - name: STREAMLIT_SERVER_ENABLE_CORS
+    value: "false"
+
