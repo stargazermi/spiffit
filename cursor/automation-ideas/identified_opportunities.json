@@ -1,0 +1,65 @@
+[
+  {
+    "file": "AE Ethernet Incentive Data.xlsx",
+    "sheet": "AE Ethernet Incentive Data 1",
+    "type": "data_validation",
+    "description": "[+] Automated data validation for 1 columns with missing data",
+    "complexity": "low"
+  },
+  {
+    "file": "AE Ethernet Incentive Data.xlsx",
+    "sheet": "AE Ethernet Incentive Data 1",
+    "type": "calculation_automation",
+    "description": "[+] Automated incentive calculations across 12 numeric fields",
+    "complexity": "medium"
+  },
+  {
+    "file": "AE Ethernet Incentive Data.xlsx",
+    "sheet": "AE Ethernet Incentive Data 1",
+    "type": "report_generation",
+    "description": "[+] Automated report generation from 200 records",
+    "complexity": "high"
+  },
+  {
+    "file": "AE Ethernet Incentive Data.xlsx",
+    "sheet": "AE Ethernet Incentive Data 2",
+    "type": "report_generation",
+    "description": "[+] Automated report generation from 300 records",
+    "complexity": "high"
+  },
+  {
+    "file": "AE Ethernet Incentive Data.xlsx",
+    "sheet": "AE Ethernet Incentive Data 3",
+    "type": "report_generation",
+    "description": "[+] Automated report generation from 150 records",
+    "complexity": "high"
+  },
+  {
+    "file": "Voice_Incentive_data.xlsx",
+    "sheet": "Voice Act. Incentive Data 1",
+    "type": "data_validation",
+    "description": "[+] Automated data validation for 1 columns with missing data",
+    "complexity": "low"
+  },
+  {
+    "file": "Voice_Incentive_data.xlsx",
+    "sheet": "Voice Act. Incentive Data 1",
+    "type": "calculation_automation",
+    "description": "[+] Automated incentive calculations across 5 numeric fields",
+    "complexity": "medium"
+  },
+  {
+    "file": "Voice_Incentive_data.xlsx",
+    "sheet": "Voice Act. Incentive Data 1",
+    "type": "report_generation",
+    "description": "[+] Automated report generation from 500 records",
+    "complexity": "high"
+  },
+  {
+    "file": "Voice_Incentive_data.xlsx",
+    "sheet": "Voice Act. Incentive Data 3",
+    "type": "report_generation",
+    "description": "[+] Automated report generation from 996 records",
+    "complexity": "high"
+  }
+]
