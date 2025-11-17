@@ -1,11 +1,14 @@
--- Create schema for SPG demo data
+-- Setup for SPG Demo Data
 -- Run this first in Databricks SQL Editor or Notebook
 
-CREATE SCHEMA IF NOT EXISTS spg_demo
-COMMENT 'Mock data schema for SPG SPIFF agent demo';
+-- Using team schema: hackathon.hackathon_spiffit
+-- Schema should already exist, but verify it's accessible:
 
-USE spg_demo;
+USE hackathon;
 
--- Verify schema created
-SHOW SCHEMAS LIKE 'spg_demo';
+-- Verify schema exists
+SHOW SCHEMAS LIKE 'hackathon';
+
+-- Next: Run the table creation scripts (02, 03, 04)
+-- All tables will be created in hackathon.hackathon_spiffit
 

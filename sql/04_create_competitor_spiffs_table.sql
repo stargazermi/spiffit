@@ -1,10 +1,10 @@
 -- Mock Competitor Intelligence Data
 -- For Genie Space: spg-mocking-bird-market
 
-USE spg_demo;
+USE hackathon;
 
 -- Create competitor SPIFF programs table
-CREATE OR REPLACE TABLE competitor_spiffs (
+CREATE OR REPLACE TABLE hackathon_spiffit.competitor_spiffs (
   competitor STRING COMMENT 'Competitor name',
   program_name STRING COMMENT 'Their SPIFF program name',
   incentive_type STRING COMMENT 'Type of incentive (Cash, Commission, etc)',
@@ -14,7 +14,7 @@ CREATE OR REPLACE TABLE competitor_spiffs (
 ) COMMENT 'Mock competitor SPIFF programs for demo';
 
 -- Insert sample data
-INSERT INTO competitor_spiffs VALUES
+INSERT INTO hackathon_spiffit.competitor_spiffs VALUES
   ('Competitor A', 'Large Deal Bonus', 'Cash', 5000.00, 'Deals > $100K', 'December 2024'),
   ('Competitor B', 'Vertical Expansion', 'Triple Commission', 0.00, 'New verticals', 'December 2024'),
   ('Competitor C', 'Year-End Push', 'Cash', 3000.00, 'Any deal closed by Dec 20', 'December 2024'),
@@ -31,6 +31,6 @@ SELECT
   END as incentive,
   target,
   month
-FROM competitor_spiffs
+FROM hackathon_spiffit.competitor_spiffs
 ORDER BY month DESC, amount DESC;
 

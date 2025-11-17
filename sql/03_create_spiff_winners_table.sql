@@ -1,10 +1,10 @@
 -- Mock SPIFF Winners / Analytics Data
 -- For Genie Space: spg-mocking-bird-analytics
 
-USE spg_demo;
+USE hackathon;
 
 -- Create SPIFF winners table
-CREATE OR REPLACE TABLE spiff_winners (
+CREATE OR REPLACE TABLE hackathon_spiffit.spiff_winners (
   employee_name STRING COMMENT 'Winner name',
   month STRING COMMENT 'Month earned',
   spiff_program STRING COMMENT 'SPIFF program name',
@@ -13,7 +13,7 @@ CREATE OR REPLACE TABLE spiff_winners (
 ) COMMENT 'Mock SPIFF winners and rankings for demo';
 
 -- Insert sample data
-INSERT INTO spiff_winners VALUES
+INSERT INTO hackathon_spiffit.spiff_winners VALUES
   ('Sarah Johnson', 'November 2024', 'Double MRR', 45230.00, 1),
   ('Mike Chen', 'November 2024', 'Double MRR', 38150.00, 2),
   ('Lisa Wang', 'November 2024', 'Double MRR', 32400.00, 3),
@@ -28,7 +28,7 @@ SELECT
   COUNT(*) as programs_won,
   SUM(earned_amount) as total_earned,
   STRING_AGG(spiff_program, ', ') as programs
-FROM spiff_winners
+FROM hackathon_spiffit.spiff_winners
 GROUP BY employee_name
 ORDER BY total_earned DESC;
 

@@ -1,12 +1,12 @@
 # SPG Demo SQL Scripts
 
-Mock data for Genie space demo.
+Mock data for Genie space demo using **`hackathon.hackathon_spiffit`** schema.
 
 ## 📁 Files
 
 Run these scripts **in order** in Databricks SQL Editor or Notebook:
 
-1. **`01_create_spg_demo_schema.sql`** - Creates the `spg_demo` schema
+1. **`01_create_spg_demo_schema.sql`** - Verify `hackathon` schema access
 2. **`02_create_sales_performance_table.sql`** - Sales data for spg-mocking-bird-sales space
 3. **`03_create_spiff_winners_table.sql`** - Analytics data for spg-mocking-bird-analytics space
 4. **`04_create_competitor_spiffs_table.sql`** - Market data for spg-mocking-bird-market space
@@ -23,7 +23,7 @@ Run these scripts **in order** in Databricks SQL Editor or Notebook:
 ### Option 2: Run in Databricks Notebook
 
 ```python
-# Cell 1: Create schema
+# Cell 1: Verify schema access
 spark.sql("""
 -- Paste contents of 01_create_spg_demo_schema.sql here
 """)
@@ -44,7 +44,7 @@ spark.sql("""
 """)
 
 # Verify all tables created
-display(spark.sql("SHOW TABLES IN spg_demo"))
+display(spark.sql("SHOW TABLES IN hackathon.hackathon_spiffit LIKE '*'"))
 ```
 
 ### Option 3: Run All at Once
@@ -69,9 +69,9 @@ for sql_file in sql_files:
     print(f"✓ {sql_file} complete\n")
 
 # Verify
-display(spark.sql("SELECT * FROM spg_demo.sales_performance"))
-display(spark.sql("SELECT * FROM spg_demo.spiff_winners"))
-display(spark.sql("SELECT * FROM spg_demo.competitor_spiffs"))
+display(spark.sql("SELECT * FROM hackathon.hackathon_spiffit.sales_performance"))
+display(spark.sql("SELECT * FROM hackathon.hackathon_spiffit.spiff_winners"))
+display(spark.sql("SELECT * FROM hackathon.hackathon_spiffit.competitor_spiffs"))
 ```
 
 ## ✅ Verification
@@ -79,8 +79,8 @@ display(spark.sql("SELECT * FROM spg_demo.competitor_spiffs"))
 After running all scripts, verify tables exist:
 
 ```sql
--- Show all tables in spg_demo schema
-SHOW TABLES IN spg_demo;
+-- Show all tables in hackathon_spiffit schema
+SHOW TABLES IN hackathon.hackathon_spiffit LIKE '*';
 
 -- Should show:
 -- sales_performance
@@ -94,12 +94,11 @@ To remove all demo data:
 
 ```sql
 -- Drop all tables
-DROP TABLE IF EXISTS spg_demo.sales_performance;
-DROP TABLE IF EXISTS spg_demo.spiff_winners;
-DROP TABLE IF EXISTS spg_demo.competitor_spiffs;
+DROP TABLE IF EXISTS hackathon.hackathon_spiffit.sales_performance;
+DROP TABLE IF EXISTS hackathon.hackathon_spiffit.spiff_winners;
+DROP TABLE IF EXISTS hackathon.hackathon_spiffit.competitor_spiffs;
 
--- Drop schema
-DROP SCHEMA IF EXISTS spg_demo;
+-- Note: Don't drop the hackathon_spiffit schema as it's shared by the team
 ```
 
 ---

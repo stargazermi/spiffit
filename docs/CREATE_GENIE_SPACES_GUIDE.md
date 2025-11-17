@@ -31,14 +31,14 @@ All SQL scripts are in `sql/` directory (root level).
 
 1. Go to **SQL Editor** in Databricks workspace
 2. Run each script in order:
-   - `01_create_spg_demo_schema.sql` - Creates `spg_demo` schema
+   - `01_create_spg_demo_schema.sql` - Verify `hackathon` schema access
    - `02_create_sales_performance_table.sql` - Sales data
    - `03_create_spiff_winners_table.sql` - Analytics data  
    - `04_create_competitor_spiffs_table.sql` - Market data
 
 3. Verify tables created:
 ```sql
-SHOW TABLES IN spg_demo;
+SHOW TABLES IN hackathon.hackathon_spiffit LIKE '*';
 -- Should show: sales_performance, spiff_winners, competitor_spiffs
 ```
 
@@ -67,7 +67,7 @@ SHOW TABLES IN spg_demo;
 
 When Genie asks "What data do you want to use?":
 1. Click **"Add Tables"** or **"Connect Data"**
-2. Search for: `spg_demo.sales_performance`
+2. Search for: `hackathon.hackathon_spiffit.sales_performance`
 3. Select the table and click **Add**
 
 ✅ **Data Source:** `sql/02_create_sales_performance_table.sql`
@@ -98,7 +98,7 @@ This space contains sales performance data. When asked:
 **Connect Your Data:**
 
 1. Click **"Add Tables"**
-2. Search for: `spg_demo.spiff_winners`
+2. Search for: `hackathon.hackathon_spiffit.spiff_winners`
 3. Select and add the table
 
 ✅ **Data Source:** `sql/03_create_spiff_winners_table.sql`
@@ -127,7 +127,7 @@ This space tracks SPIFF winners and rankings. When asked:
 **Connect Your Data:**
 
 1. Click **"Add Tables"**
-2. Search for: `spg_demo.competitor_spiffs`
+2. Search for: `hackathon.hackathon_spiffit.competitor_spiffs`
 3. Select and add the table
 
 ✅ **Data Source:** `sql/04_create_competitor_spiffs_table.sql`
@@ -267,17 +267,18 @@ streamlit run spiff_agent_app.py --server.port 8000
 **Remove Mock Data:**
 ```sql
 -- Run in Databricks SQL Editor
-DROP TABLE IF EXISTS spg_demo.sales_performance;
-DROP TABLE IF EXISTS spg_demo.spiff_winners;
-DROP TABLE IF EXISTS spg_demo.competitor_spiffs;
-DROP SCHEMA IF EXISTS spg_demo;
+DROP TABLE IF EXISTS hackathon.hackathon_spiffit.sales_performance;
+DROP TABLE IF EXISTS hackathon.hackathon_spiffit.spiff_winners;
+DROP TABLE IF EXISTS hackathon.hackathon_spiffit.competitor_spiffs;
+
+-- Note: Don't drop hackathon_spiffit schema - it's shared by the team!
 ```
 
 ---
 
 ## 🆘 Troubleshooting
 
-**"Can't find table spg_demo.*"**
+**"Can't find table hackathon.hackathon_spiffit.*"**
 → Run the SQL scripts in Step 1 first!
 
 **"No tables available in Genie"**
