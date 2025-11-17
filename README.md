@@ -101,4 +101,3 @@ The `cursor/` folder contains:
 ---
 
 Good luck, team! 🚀
-
