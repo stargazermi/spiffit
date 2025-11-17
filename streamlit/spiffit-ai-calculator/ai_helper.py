@@ -64,12 +64,19 @@ class IncentiveAI:
         Query using Genie space
         """
         try:
-            # Genie API call
-            response = self.workspace.genie.ask_question(
+            # Start a conversation with Genie
+            conversation = self.workspace.genie.start_conversation(
                 space_id=self.genie_space_id,
                 content=question
             )
-            return response.content
+            
+            # Get the response from the conversation
+            if conversation and hasattr(conversation, 'messages') and conversation.messages:
+                # Return the last message content (Genie's response)
+                return conversation.messages[-1].content
+            else:
+                return "No response from Genie"
+                
         except Exception as e:
             return f"Genie error: {str(e)}"
     
