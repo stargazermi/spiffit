@@ -10,6 +10,9 @@ numpy>=1.24.0
 # Databricks SDK for AI/LLM access
 databricks-sdk>=0.12.0
 
+# Environment variable management
+python-dotenv>=1.0.0
+
 # For Delta Lake access (when you connect the calculator)
 # pyspark>=3.4.0
 

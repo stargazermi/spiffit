@@ -6,6 +6,7 @@ Handles Genie and Foundation Model API interactions
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.serving import ChatMessage, ChatMessageRole
 import json
+import os
 
 
 class IncentiveAI:
@@ -19,13 +20,20 @@ class IncentiveAI:
         
         Args:
             genie_space_id: Optional Genie space ID
-                          Available spaces in dlk-hackathon:
-                          - DPI Stats: 01eff85bf03e1514838b4bc3fe884053
-                          - DPI Service Order Stats: 01efa5e57638161591974326e56e4807
             model_name: Optional Foundation Model name 
                        (e.g., 'databricks-meta-llama-3-1-70b-instruct')
         """
-        self.workspace = WorkspaceClient()
+        # Initialize Databricks client with profile or environment variables
+        # For local testing: uses dlk-hackathon profile from databricks CLI
+        # For Databricks Apps: uses default authentication
+        
+        # Check if we have a Databricks profile configured
+        profile = os.getenv("DATABRICKS_PROFILE", "dlk-hackathon")
+        
+        # For local development, always use the profile
+        # The profile should be configured via: databricks auth login --profile dlk-hackathon
+        self.workspace = WorkspaceClient(profile=profile)
+        
         self.genie_space_id = genie_space_id
         self.model_name = model_name or "databricks-meta-llama-3-1-70b-instruct"
     

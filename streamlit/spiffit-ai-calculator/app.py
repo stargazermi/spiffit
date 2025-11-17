@@ -3,6 +3,10 @@ Spiffit AI Calculator - Streamlit App
 Natural language interface for incentive calculations
 """
 
+# Load environment variables from .env file (for local testing)
+from dotenv import load_dotenv
+load_dotenv()
+
 import streamlit as st
 import os
 from ai_helper import IncentiveAI

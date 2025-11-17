@@ -38,28 +38,39 @@ git push origin main
 
 ## 🔧 Configuration
 
-### Set Your Genie Space ID
+### ✅ Genie Spaces Already Configured!
 
-The app reads the Genie Space ID from the `GENIE_SPACE_ID` environment variable.
+Your Genie spaces are already set up with IDs from `dlk-hackathon` workspace:
 
-**For local testing:**
+- **Sales:** `spg-mocking-bird-sales` → `01f0c403c3cf184e9b7f1f6c9ee45905`
+- **Analytics:** `spg-mocking-bird-analytics` → `01f0c404048613b3b494b1a64a1bca84`
+- **Market:** `spg-mocking-bird-market` → `01f0c4043acf19dc936c37fd2a8bced3`
+
+### For Local Testing:
+
+**Option 1: Use the example file**
+```bash
+# Copy the example file
+cp env.example .env
+
+# Edit .env if you want to change space IDs (optional)
+# Then run:
+streamlit run app.py --server.port 8000
+```
+
+**Option 2: Set environment variables directly**
 ```bash
 # Windows (PowerShell)
-$env:GENIE_SPACE_ID="your-space-id"
+$env:GENIE_SPACE_ID="01f0c403c3cf184e9b7f1f6c9ee45905"
 streamlit run app.py --server.port 8000
 
 # Mac/Linux
-export GENIE_SPACE_ID=your-space-id
+export GENIE_SPACE_ID="01f0c403c3cf184e9b7f1f6c9ee45905"
 streamlit run app.py --server.port 8000
 ```
 
 **For Databricks deployment:**
-Edit `app.yaml` and uncomment the GENIE_SPACE_ID section:
-```yaml
-env:
-  - name: GENIE_SPACE_ID
-    value: "your-space-id-here"
-```
+Space IDs are already configured in `app.yaml` - just deploy!
 
 **If not configured:** App will show a warning and fall back to Foundation Model API.
 
