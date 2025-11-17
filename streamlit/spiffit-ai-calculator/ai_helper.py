@@ -23,16 +23,18 @@ class IncentiveAI:
             model_name: Optional Foundation Model name 
                        (e.g., 'databricks-meta-llama-3-1-70b-instruct')
         """
-        # Initialize Databricks client with profile or environment variables
-        # For local testing: uses dlk-hackathon profile from databricks CLI
-        # For Databricks Apps: uses default authentication
+        # Initialize Databricks client
+        # Local: uses CLI profile (dlk-hackathon)
+        # Databricks Apps: uses automatic authentication (no profile needed)
         
-        # Check if we have a Databricks profile configured
-        profile = os.getenv("DATABRICKS_PROFILE", "dlk-hackathon")
+        profile = os.getenv("DATABRICKS_PROFILE")
         
-        # For local development, always use the profile
-        # The profile should be configured via: databricks auth login --profile dlk-hackathon
-        self.workspace = WorkspaceClient(profile=profile)
+        if profile:
+            # Local development with CLI profile
+            self.workspace = WorkspaceClient(profile=profile)
+        else:
+            # Databricks Apps - automatic authentication
+            self.workspace = WorkspaceClient()
         
         self.genie_space_id = genie_space_id
         self.model_name = model_name or "databricks-meta-llama-3-1-70b-instruct"
