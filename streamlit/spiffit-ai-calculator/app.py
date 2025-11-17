@@ -9,8 +9,13 @@ load_dotenv()
 
 import streamlit as st
 import os
+from datetime import datetime
 from ai_helper import IncentiveAI
 from query_parser import QueryParser
+
+# Version and deployment tracking
+APP_VERSION = "v1.2.0"  # Update this with each deployment
+DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 # Page configuration
 st.set_page_config(
@@ -197,6 +202,17 @@ I would show the top performers by **{parsed['metric']}** here.
 # Tab 2: Troubleshooting & Environment
 with tab2:
     st.header("🔧 Troubleshooting & Environment Info")
+    
+    # Version and Deployment Info
+    st.markdown("### 📦 Deployment Info")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.info(f"**Version:** {APP_VERSION}")
+    with col2:
+        st.info(f"**Deployed:** {DEPLOYMENT_TIME}")
+    
+    st.caption("💡 **Tip:** If you just redeployed, refresh the page and check if the timestamp updated")
+    st.markdown("---")
     
     st.markdown("### 🔍 Environment Variables")
     env_vars = {

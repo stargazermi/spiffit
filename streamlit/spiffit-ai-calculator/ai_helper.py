@@ -64,21 +64,49 @@ class IncentiveAI:
         Query using Genie space
         """
         try:
-            # Start a conversation with Genie
-            conversation = self.workspace.genie.start_conversation(
-                space_id=self.genie_space_id,
-                content=question
-            )
-            
-            # Get the response from the conversation
-            if conversation and hasattr(conversation, 'messages') and conversation.messages:
-                # Return the last message content (Genie's response)
-                return conversation.messages[-1].content
-            else:
-                return "No response from Genie"
+            # Method 1: Try using create_message API (recommended for SDK)
+            try:
+                message = self.workspace.genie.create_message(
+                    space_id=self.genie_space_id,
+                    content=question
+                )
+                
+                if message and hasattr(message, 'content'):
+                    return message.content
+                elif message and hasattr(message, 'text'):
+                    return message.text
+                else:
+                    return f"Received response but format unexpected: {str(message)}"
+                    
+            except AttributeError:
+                # Method 2: Fallback to start_conversation if create_message doesn't exist
+                conversation = self.workspace.genie.start_conversation(
+                    space_id=self.genie_space_id,
+                    content=question
+                )
+                
+                if conversation and hasattr(conversation, 'messages') and conversation.messages:
+                    return conversation.messages[-1].content
+                else:
+                    return "No response from Genie"
                 
         except Exception as e:
-            return f"Genie error: {str(e)}"
+            import traceback
+            error_detail = traceback.format_exc()
+            return f"""Genie API Error:
+{str(e)}
+
+**Possible causes:**
+1. Databricks App doesn't have permission to access Genie spaces
+2. API authentication context differs from CLI
+3. Genie space permissions need to be shared with the app
+
+**Debug info:**
+Space ID: {self.genie_space_id}
+Error details: {error_detail}
+
+**To fix:** Try running this app locally first with DATABRICKS_PROFILE=dlk-hackathon
+"""
     
     def _ask_foundation_model(self, question: str, calculator_results: dict = None):
         """
