@@ -13,28 +13,47 @@ Natural language interface for incentive calculations using Databricks AI.
 
 ## 🚀 Quick Start
 
-### Option 1: Test Locally
+### ⭐ RECOMMENDED: Deploy to Databricks Apps
+
 ```bash
+# 1. Push to Git
+git add .
+git commit -m "Add AI calculator app"
+git push origin main
+
+# 2. In Databricks (https://dbc-4a93b454-f17b.cloud.databricks.com):
+#    - Go to Apps
+#    - Create App
+#    - Source: github.com/stargazermi/spiffit
+#    - Path: streamlit/spiffit-ai-calculator/
+#    - Deploy! (takes ~2-3 minutes)
+```
+
+**Why Databricks Apps?**
+- ✅ Automatic authentication (no CLI setup)
+- ✅ All Genie spaces pre-configured in `app.yaml`
+- ✅ Share with team via URL
+- ✅ Production-ready hosting
+
+**See `DEPLOY_TO_DATABRICKS.md` for detailed steps.**
+
+---
+
+### Option 2: Test Locally (Advanced)
+
+Requires Databricks CLI authentication:
+
+```bash
+# 1. Authenticate
+databricks auth login --host https://dbc-4a93b454-f17b.cloud.databricks.com --profile dlk-hackathon
+
+# 2. Install and run
 cd streamlit/spiffit-ai-calculator
 pip install -r requirements.txt
 streamlit run app.py --server.port 8000
 ```
 
-### Option 2: Deploy to Databricks
-
-```bash
-# Push to Git
-git add streamlit/spiffit-ai-calculator/
-git commit -m "Add AI calculator app"
-git push origin main
-
-# In Databricks:
-# 1. Go to Apps
-# 2. Create App
-# 3. Source: Your repo (spiffit)
-# 4. Path: streamlit/spiffit-ai-calculator/
-# 5. Deploy!
-```
+**Note:** Local testing requires `.env` file with `DATABRICKS_PROFILE=dlk-hackathon`
 
 ## 🔧 Configuration
 
