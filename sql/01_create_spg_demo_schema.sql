@@ -1,13 +1,15 @@
 -- Setup for SPG Demo Data
 -- Run this first in Databricks SQL Editor or Notebook
 
--- Using team schema: hackathon.hackathon_spiffit
--- Schema should already exist, but verify it's accessible:
+-- IMPORTANT: Set the catalog to hackathon (Unity Catalog)
+USE CATALOG hackathon;
 
-USE hackathon;
+-- Verify you're in the right catalog
+SELECT current_catalog();
+-- Should return: hackathon
 
--- Verify schema exists
-SHOW SCHEMAS LIKE 'hackathon';
+-- Verify the schema exists
+SHOW SCHEMAS LIKE 'hackathon_spiffit';
 
 -- Next: Run the table creation scripts (02, 03, 04)
 -- All tables will be created in hackathon.hackathon_spiffit
