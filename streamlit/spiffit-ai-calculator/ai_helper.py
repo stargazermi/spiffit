@@ -18,7 +18,10 @@ class IncentiveAI:
         Initialize AI helper
         
         Args:
-            genie_space_id: Optional Genie space ID (get from Genie UI)
+            genie_space_id: Optional Genie space ID
+                          Available spaces in dlk-hackathon:
+                          - DPI Stats: 01eff85bf03e1514838b4bc3fe884053
+                          - DPI Service Order Stats: 01efa5e57638161591974326e56e4807
             model_name: Optional Foundation Model name 
                        (e.g., 'databricks-meta-llama-3-1-70b-instruct')
         """

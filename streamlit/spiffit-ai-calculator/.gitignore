@@ -8,6 +8,9 @@ env/
 venv/
 .venv/
 
+# Environment variables (contains secrets!)
+.env
+
 # Streamlit
 .streamlit/
 

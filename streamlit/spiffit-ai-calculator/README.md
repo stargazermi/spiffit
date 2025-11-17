@@ -38,18 +38,30 @@ git push origin main
 
 ## 🔧 Configuration
 
-### Using Genie (Option 1)
-1. Get your Genie Space ID from Databricks Genie UI
-2. In the app sidebar, check "Use Genie"
-3. Enter your Space ID
+### Set Your Genie Space ID
 
-### Using Foundation Models (Option 2)
-1. In the app sidebar, select your model:
-   - Llama 3.1 70B (default)
-   - DBRX
-   - Claude 3 Sonnet
-   - GPT-4
-2. No additional config needed!
+The app reads the Genie Space ID from the `GENIE_SPACE_ID` environment variable.
+
+**For local testing:**
+```bash
+# Windows (PowerShell)
+$env:GENIE_SPACE_ID="your-space-id"
+streamlit run app.py --server.port 8000
+
+# Mac/Linux
+export GENIE_SPACE_ID=your-space-id
+streamlit run app.py --server.port 8000
+```
+
+**For Databricks deployment:**
+Edit `app.yaml` and uncomment the GENIE_SPACE_ID section:
+```yaml
+env:
+  - name: GENIE_SPACE_ID
+    value: "your-space-id-here"
+```
+
+**If not configured:** App will show a warning and fall back to Foundation Model API.
 
 ## 📊 What It Does Right Now
 

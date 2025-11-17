@@ -4,6 +4,7 @@ Natural language interface for incentive calculations
 """
 
 import streamlit as st
+import os
 from ai_helper import IncentiveAI
 from query_parser import QueryParser
 
@@ -18,11 +19,35 @@ st.set_page_config(
 @st.cache_resource
 def init_ai():
     """Initialize AI helper and parser (cached)"""
-    # Option 1: Use Genie (if you have a space ID)
-    # ai = IncentiveAI(genie_space_id="YOUR_GENIE_SPACE_ID")
+    # Read Genie space ID from environment variable
+    genie_space_id = os.getenv("GENIE_SPACE_ID")
     
-    # Option 2: Use Foundation Model directly
-    ai = IncentiveAI(model_name="databricks-meta-llama-3-1-70b-instruct")
+    if genie_space_id:
+        # Use Genie if space ID is configured
+        ai = IncentiveAI(genie_space_id=genie_space_id)
+        st.success(f"✅ Connected to Genie Space: {genie_space_id}")
+    else:
+        # Fall back to Foundation Model
+        ai = IncentiveAI(model_name="databricks-meta-llama-3-1-70b-instruct")
+        st.warning("""
+        ⚠️ **Genie Space ID not configured**
+        
+        The app is using Foundation Model API as a fallback.
+        
+        **To use Genie (recommended):**
+        1. Set environment variable: `GENIE_SPACE_ID=your-space-id`
+        2. Or add to Databricks App secrets
+        3. Restart the app
+        
+        **For local testing:**
+        ```bash
+        export GENIE_SPACE_ID=your-space-id
+        streamlit run app.py --server.port 8000
+        ```
+        
+        **For Databricks deployment:**
+        Add `GENIE_SPACE_ID` to your app.yaml env section.
+        """)
     
     parser = QueryParser(ai)
     return ai, parser
