@@ -65,7 +65,11 @@ git push origin main
 
 ## 📚 Additional Resources
 
-- **AI Integration Guide:** `ai_integration_guide.md` - Detailed steps for Hour 5-6
+- **AI Integration Guide:** `../docs/ai_integration_guide.md` - Detailed steps for Hour 5-6
+- **Genie Setup Guide:** `../docs/GENIE_SETUP.md`
+- **Create Genie Spaces:** `../docs/CREATE_GENIE_SPACES_GUIDE.md`
+- **Autonomous Agent Guide:** `../docs/AUTONOMOUS_SPIFF_AGENT.md`
+- **SQL Setup:** `../sql/` - Mock data creation scripts
 - **Calculator Code:** `../cursor/prototypes/02_incentive_calculator.py`
 - **Implementation Plans:** `../cursor/automation-ideas/implementation-plans/`
 
@@ -75,8 +79,7 @@ git push origin main
 
 ```
 streamlit/
-├── README.md (this file)
-├── ai_integration_guide.md (Hour 5-6 implementation guide)
+├── README.md (this file - app overview)
 │
 ├── spiffit-hello/
 │   ├── app.py
@@ -88,9 +91,15 @@ streamlit/
     ├── app.py
     ├── ai_helper.py
     ├── query_parser.py
+    ├── spiff_agent.py
+    ├── spiff_agent_app.py
     ├── app.yaml
     ├── requirements.txt
     └── README.md
+
+📁 Documentation and SQL scripts are now at root level:
+   ../docs/     - All guides and documentation
+   ../sql/      - Mock data SQL scripts
 ```
 
 ---

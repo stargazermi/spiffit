@@ -93,11 +93,31 @@ spiffit/
 │   ├── AE Ethernet Incentive Data.xlsx
 │   └── Voice_Incentive_data.xlsx
 │
+├── docs/                              # 📚 Documentation & guides
+│   ├── CREATE_GENIE_SPACES_GUIDE.md  # How to create Genie spaces
+│   ├── ai_integration_guide.md       # AI/LLM integration
+│   ├── GENIE_SETUP.md                # Genie configuration
+│   ├── AUTONOMOUS_SPIFF_AGENT.md     # Agent architecture
+│   ├── SMART_GENIE_ROUTING.md        # Routing strategies
+│   └── MULTI_GENIE_WORKFLOWS.md      # Workflow patterns
+│
+├── sql/                               # 🗄️ Mock data SQL scripts
+│   ├── 01_create_spg_demo_schema.sql
+│   ├── 02_create_sales_performance_table.sql
+│   ├── 03_create_spiff_winners_table.sql
+│   ├── 04_create_competitor_spiffs_table.sql
+│   └── README.md                     # SQL setup instructions
+│
+├── streamlit/                         # 🖥️ Streamlit applications
+│   ├── README.md                     # Apps overview
+│   ├── spiffit-hello/                # Hello world test app
+│   └── spiffit-ai-calculator/        # AI calculator app
+│
 └── cursor/                            # All hackathon work (ORGANIZED!)
     ├── README.md                      # Project overview
     ├── QUICK_START.md                 # ⭐ Start here!
     ├── EXECUTIVE_SUMMARY.md           # Business case & ROI
-    ├── HACKATHON_DAY_PLAN.md         # Hour-by-hour timeline
+    ├── HACKATHON_DAY_PLAN.md          # Hour-by-hour timeline
     │
     ├── data-exploration/              # Excel analysis results
     │   ├── analyze_excel_files.py
