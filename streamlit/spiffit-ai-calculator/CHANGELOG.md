@@ -4,6 +4,129 @@ All notable changes to the Spiffit application.
 
 ---
 
+## [v2.7.2-SPIFFIT] - 2025-11-18
+### 🌐 CRITICAL FIX: Alternate HOST + TOKEN for Cross-Workspace Auth
+**Problem Discovered:**
+```
+❌ Invalid access token. Config: host=https://dbc-4a93b454-f17b.cloud.databricks.com, token=***5c4
+```
+
+**Root Cause:**
+- v2.7.1 only supported alternate TOKEN
+- BUT: Token was used with the WRONG HOST (dlk-hackathon workspace URL)
+- **The Voice Activations Genie is in a DIFFERENT workspace with a DIFFERENT URL!**
+- PAT tokens are workspace-specific and must be used with their workspace's URL
+
+**The Missing Piece:**
+Cross-workspace access requires **BOTH**:
+1. ✅ Alternate workspace URL (host) 
+2. ✅ Alternate PAT token (from that workspace)
+
+**Solution Implemented:**
+- ✅ **Added `alt_workspace_host` parameter** to `IncentiveAI.__init__()`
+- ✅ **New environment variable:** `DATABRICKS_VOICE_WORKSPACE_HOST`
+- ✅ **Enhanced logging:** Shows both alternate host AND token
+- ✅ **Updated initialization:** Voice Activations uses both alt host + alt token
+
+**Technical Changes:**
+
+1. **`ai_helper.py`**
+   - Added `alt_workspace_host` parameter
+   - Uses `alt_workspace_host or os.getenv("DATABRICKS_HOST")`
+   - Enhanced logging to show both workspaces
+   - WorkspaceClient now connects to correct workspace URL
+
+2. **`multi_tool_agent.py`**
+   - Reads `DATABRICKS_VOICE_WORKSPACE_HOST` environment variable
+   - Passes both `alt_workspace_host` and `alt_workspace_token` to Voice Activations Genie
+   - Other Genies unchanged (still use main workspace)
+
+3. **`app.yaml`**
+   - Added `DATABRICKS_VOICE_WORKSPACE_HOST` with placeholder
+   - Updated comments to emphasize BOTH values needed
+   - User must get BOTH host URL and PAT token from data analyst
+
+**Setup Required:**
+1. **Ask data analyst for TWO things:**
+   - Workspace URL where Voice Activations Genie lives (e.g., `https://dbc-xxxxx.cloud.databricks.com`)
+   - PAT token from that workspace
+   
+2. **Update `app.yaml`:**
+   ```yaml
+   - name: DATABRICKS_VOICE_WORKSPACE_HOST
+     value: "https://dbc-xxxxx-yyyy.cloud.databricks.com"  # FROM DATA ANALYST
+   - name: DATABRICKS_VOICE_WORKSPACE_TOKEN
+     value: "dapi_abc123..."  # FROM DATA ANALYST
+   ```
+
+3. **Run test script:**
+   ```powershell
+   .\test-voice-workspace-token.ps1
+   ```
+   This will verify the token works with the workspace URL!
+
+4. **Deploy:**
+   ```powershell
+   .\deploy-to-databricks.ps1
+   ```
+
+**Authentication Flow (Fixed):**
+```
+Voice Activations Genie Query
+  ↓
+Read: DATABRICKS_VOICE_WORKSPACE_HOST + DATABRICKS_VOICE_WORKSPACE_TOKEN
+  ↓
+WorkspaceClient(host=ALT_HOST, token=ALT_TOKEN)  ← FIX!
+  ↓
+Connect to OTHER workspace with correct credentials
+  ↓
+Access Voice Activations Genie ✅
+  ↓
+Return VOIP MRR payouts! 🎉
+```
+
+**What Was Wrong (v2.7.1):**
+```python
+# WRONG: Used alt token with MAIN workspace URL
+host = os.getenv("DATABRICKS_HOST")  # dlk-hackathon URL
+token = alt_workspace_token  # token from OTHER workspace ❌ MISMATCH!
+```
+
+**What's Fixed (v2.7.2):**
+```python
+# RIGHT: Use alt token with ALT workspace URL
+host = alt_workspace_host or os.getenv("DATABRICKS_HOST")  # Other workspace URL ✅
+token = alt_workspace_token or os.getenv("DATABRICKS_TOKEN")  # Matching token ✅
+```
+
+**Logging Output (Fixed):**
+```
+🔄 ALTERNATE WORKSPACE (Cross-workspace access):
+   Host: https://dbc-xxxxx-yyyy.cloud.databricks.com  ← Now shows ALTERNATE host!
+   Token: ✅ SET (***5c4)
+📍 Main workspace settings (overridden):
+   Host: https://dbc-4a93b454-f17b.cloud.databricks.com
+   Token: ***c2f
+```
+
+**Files Modified:**
+- `ai_helper.py` - Added `alt_workspace_host` parameter
+- `multi_tool_agent.py` - Reads and passes `DATABRICKS_VOICE_WORKSPACE_HOST`
+- `app.yaml` - Added `DATABRICKS_VOICE_WORKSPACE_HOST` env var
+- `test-voice-workspace-token.ps1` - NEW: Test script to verify credentials
+- `CHANGELOG.md` - This entry
+
+**Testing:**
+1. Run `test-voice-workspace-token.ps1` to verify token + host combo
+2. Check Troubleshooting tab logs after deployment
+3. Should see "Alternate Host: https://dbc-xxxxx..." (not dlk-hackathon!)
+4. Voice Activations button should work! ✅
+
+**Key Lesson:**
+🎯 **Cross-workspace access requires BOTH workspace URL AND token from that workspace!**
+
+---
+
 ## [v2.7.1-SPIFFIT] - 2025-11-18
 ### 🔐 Separate PAT Token for Cross-Workspace Authentication
 **Why:** Voice Activations Genie is in another workspace. PAT tokens are workspace-specific, so the main dlk-hackathon PAT can't access it.

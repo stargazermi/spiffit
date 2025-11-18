@@ -58,17 +58,20 @@ class MultiToolAgent:
         self.genie_analytics = IncentiveAI(genie_space_id=genie_analytics_id) if genie_analytics_id else None
         self.genie_market = IncentiveAI(genie_space_id=genie_market_id) if genie_market_id else None
         
-        # Voice Activations uses alternate workspace token (cross-workspace access)
+        # Voice Activations uses alternate workspace (host + token) for cross-workspace access
+        voice_alt_host = os.getenv("DATABRICKS_VOICE_WORKSPACE_HOST")
         voice_alt_token = os.getenv("DATABRICKS_VOICE_WORKSPACE_TOKEN")
+        
         if genie_voice_activations_id:
-            if voice_alt_token:
-                # Use alternate token for cross-workspace access
+            if voice_alt_host or voice_alt_token:
+                # Use alternate workspace for cross-workspace access
                 self.genie_voice_activations = IncentiveAI(
                     genie_space_id=genie_voice_activations_id,
+                    alt_workspace_host=voice_alt_host,
                     alt_workspace_token=voice_alt_token
                 )
             else:
-                # Fallback to default token (if in same workspace)
+                # Fallback to default workspace (if in same workspace)
                 self.genie_voice_activations = IncentiveAI(genie_space_id=genie_voice_activations_id)
         else:
             self.genie_voice_activations = None

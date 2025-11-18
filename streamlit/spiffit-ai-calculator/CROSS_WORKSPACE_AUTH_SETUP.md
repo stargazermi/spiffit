@@ -3,70 +3,92 @@
 ## Problem
 You need to access a Genie space (`01f0c3e4c6751989828598c96ee0debf`) in a **different workspace** than the main app workspace (`dlk-hackathon`).
 
-PAT tokens are workspace-specific, so you need a separate token for the other workspace.
+**CRITICAL:** PAT tokens are workspace-specific AND must be used with their workspace's URL!
+
+You need **BOTH**:
+1. ✅ Workspace URL (host) from the other workspace
+2. ✅ PAT token from the other workspace
 
 ---
 
 ## ✅ Solution Implemented
 
-The app now supports **separate PAT tokens** for cross-workspace Genie access!
+The app now supports **separate workspace credentials** (host + token) for cross-workspace Genie access!
 
 **What changed:**
-- `ai_helper.py` - Added `alt_workspace_token` parameter
-- `multi_tool_agent.py` - Voice Activations Genie uses `DATABRICKS_VOICE_WORKSPACE_TOKEN`
-- `app.yaml` - Added new environment variable for alternate token
+- `ai_helper.py` - Added `alt_workspace_host` and `alt_workspace_token` parameters
+- `multi_tool_agent.py` - Voice Activations Genie uses `DATABRICKS_VOICE_WORKSPACE_HOST` + `DATABRICKS_VOICE_WORKSPACE_TOKEN`
+- `app.yaml` - Added TWO new environment variables for alternate workspace
 
 ---
 
 ## 🎯 Setup Steps
 
-### **Step 1: Get PAT Token from Other Workspace**
+### **Step 1: Get Workspace URL + PAT Token from Data Analyst**
 
-1. **Log into the workspace where Voice Activations Genie lives**
-   - Ask your data analyst for the workspace URL
-   - Or check where space `01f0c3e4c6751989828598c96ee0debf` is located
+**Ask your data analyst for TWO things:**
 
-2. **Generate a PAT Token:**
-   - Click your user icon (top right)
-   - **User Settings** → **Developer** → **Access Tokens**
-   - Click **"Generate New Token"**
-   - **Comment:** "Spiffit cross-workspace access - Voice Activations Genie"
-   - **Lifetime:** 90 days (or as needed)
-   - **Click "Generate"**
-   - **⚠️ COPY THE TOKEN IMMEDIATELY** (you can't see it again!)
+1. **Workspace URL** where Voice Activations Genie lives
+   - Example: `https://dbc-12345678-90ab.cloud.databricks.com`
+   - Or: `https://adb-123456789.azuredatabricks.net` (Azure)
+   - **NOT** the dlk-hackathon URL!
 
-3. **Save the token:**
-   ```
-   dapi_YOUR_NEW_TOKEN_FROM_OTHER_WORKSPACE
-   ```
+2. **PAT Token** from that workspace
+   - They need to generate it from **their workspace**
+   - Steps to generate:
+     - Log into the OTHER workspace
+     - User Settings → Developer → Access Tokens
+     - Generate New Token
+     - Comment: "Spiffit Voice Activations cross-workspace"
+     - Lifetime: 90 days
+     - Copy the token (starts with `dapi_`)
+
+**⚠️ CRITICAL:** The token MUST be from the SAME workspace as the URL!
 
 ---
 
-### **Step 2: Update app.yaml**
+### **Step 2: Test the Credentials (Recommended)**
+
+**Before updating app.yaml, test the credentials work:**
+
+```powershell
+.\test-voice-workspace-token.ps1
+```
+
+**The script will:**
+1. Ask for the workspace URL
+2. Ask for the PAT token
+3. Verify the token works with that URL
+4. Check if Voice Activations Genie (`01f0c3e4c6751989828598c96ee0debf`) exists there
+5. ✅ Confirm if it's the right workspace!
+
+---
+
+### **Step 3: Update app.yaml**
 
 **Edit:** `streamlit/spiffit-ai-calculator/app.yaml`
 
-**Find this line:**
+**Find these lines:**
 ```yaml
+- name: DATABRICKS_VOICE_WORKSPACE_HOST
+  value: "YOUR_OTHER_WORKSPACE_URL_HERE"
 - name: DATABRICKS_VOICE_WORKSPACE_TOKEN
-  value: "YOUR_OTHER_WORKSPACE_PAT_TOKEN_HERE"  # ⚠️ REQUIRED
+  value: "YOUR_OTHER_WORKSPACE_PAT_TOKEN_HERE"
 ```
 
-**Replace with your actual token:**
+**Replace with actual values:**
 ```yaml
+- name: DATABRICKS_VOICE_WORKSPACE_HOST
+  value: "https://dbc-12345678-90ab.cloud.databricks.com"  # FROM DATA ANALYST
 - name: DATABRICKS_VOICE_WORKSPACE_TOKEN
-  value: "dapi_YOUR_NEW_TOKEN_FROM_OTHER_WORKSPACE"
+  value: "dapi_abc123def456ghi789jkl012mno345"  # FROM DATA ANALYST
 ```
 
-**Example:**
-```yaml
-- name: DATABRICKS_VOICE_WORKSPACE_TOKEN
-  value: "dapi_abc123def456ghi789jkl012mno345"
-```
+**⚠️ IMPORTANT:** Manually edit this file in Databricks UI (don't commit to Git!)
 
 ---
 
-### **Step 3: Deploy**
+### **Step 4: Deploy**
 
 ```powershell
 .\deploy-to-databricks.ps1
@@ -74,8 +96,8 @@ The app now supports **separate PAT tokens** for cross-workspace Genie access!
 
 **The deployment script will:**
 1. Git pull latest changes in Databricks
-2. Restart the app with new environment variable
-3. Voice Activations Genie will now use the alternate token!
+2. Restart the app with new environment variables (HOST + TOKEN)
+3. Voice Activations Genie will now connect to the alternate workspace!
 
 ---
 
