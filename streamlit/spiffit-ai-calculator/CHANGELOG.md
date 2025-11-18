@@ -4,6 +4,62 @@ All notable changes to the Spiffit application.
 
 ---
 
+## [v2.6.0-SPIFFIT] - 2025-11-18
+### 🤖 Expanded Orchestrator Model Options
+**Why:** The hardcoded list had only 4 models (some didn't exist), but workspace has 21 serving endpoints!
+
+**Added:**
+- ✅ **18 Foundation Models** now available in the dropdown!
+- ✅ **Latest Models:**
+  - GPT-5.1 (newest OpenAI) ⭐
+  - Claude Sonnet 4.5 (newest Anthropic) ⭐
+  - Llama 3.3 70B (newest Meta) ⭐
+  - Llama 4 Maverick (cutting edge) ⭐
+- ✅ **Premium Options:**
+  - Claude Opus 4.1 (most powerful reasoning)
+  - Llama 3.1 405B (largest model)
+  - Gemini 2.5 Pro
+  - GPT-5
+  - Custom GPT-OSS-120B
+- ✅ **Fast & Efficient:**
+  - GPT-5 Mini/Nano (fastest)
+  - Gemini 2.5 Flash
+  - Llama 3.1 8B (budget)
+- ✅ **Other Options:**
+  - Claude Opus 4, Sonnet 4, 3.7 Sonnet
+  - Custom GPT-OSS-20B
+  - Gemma 3 12B
+
+**Discovery:**
+- Created `list-serving-endpoints.ps1` to query workspace endpoints
+- Found 21 serving endpoints (15 suitable for orchestration)
+- Removed non-existent models from old hardcoded list
+
+**Benefits:**
+- 🎯 **Better Performance:** Use latest GPT-5.1 or Claude 4.5
+- ⚡ **Faster Routing:** Try GPT-5-nano for 3-5x speed
+- 💰 **Cost Options:** Choose budget (8B) to premium (405B)
+- 🔬 **Compare Models:** Test different orchestrators during demo
+
+**Technical Details:**
+- Updated `app.py` dropdown (lines 193-219) with 18 models
+- Models organized by tier: Recommended → Premium → Fast → Other
+- Default: `databricks-gpt-5-1` (GPT-5.1)
+- Help text shows "15 models available!"
+
+**Files Modified:**
+- `app.py` - Expanded model dropdown from 4 to 18 options
+- `multi_tool_agent.py` - Updated default to GPT-5.1
+- `list-serving-endpoints.ps1` - New diagnostic script
+- `ORCHESTRATOR_MODELS.md` - Complete model selection guide
+
+**Demo Impact:**
+- 🎤 **Talk Track:** "We're using GPT-5.1, the latest OpenAI model!"
+- 🎯 **Flexibility:** Switch models live during demo
+- 💪 **Impressive:** Show cutting-edge Llama 4 or Claude 4.5
+
+---
+
 ## [v2.5.1-SPIFFIT] - 2025-11-18
 ### 📎 CSV Download for Email Attachments
 **Why:** Users need to attach raw data files to emails, not just copy formatted text

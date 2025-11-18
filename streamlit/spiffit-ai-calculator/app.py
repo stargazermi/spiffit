@@ -31,7 +31,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v2.5.1-SPIFFIT"  # 📧 Copy for Email + 📎 CSV Download
+APP_VERSION = "v2.6.0-SPIFFIT"  # 🤖 18 Orchestrator Models (GPT-5.1, Claude 4.5, Llama 4!)
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
 logger.info("🎸 When a problem comes along... you must Spiff It! 🎸")
@@ -191,12 +191,33 @@ with st.sidebar:
     model_choice = st.selectbox(
         "🤖 Agent Brain (Orchestrator)",
         [
-            "databricks-meta-llama-3-1-70b-instruct",
-            "databricks-dbrx-instruct",
-            "anthropic-claude-3-sonnet",
-            "openai-gpt-4"
+            # 🏆 Tier 1: Best Overall (Recommended)
+            "databricks-gpt-5-1",                           # ⭐ GPT-5.1 (Latest OpenAI)
+            "databricks-claude-sonnet-4-5",                 # ⭐ Claude Sonnet 4.5 (Latest Anthropic)
+            "databricks-meta-llama-3-3-70b-instruct",       # ⭐ Llama 3.3 70B (Newest Meta)
+            "databricks-llama-4-maverick",                  # ⭐ Llama 4 Maverick (Cutting edge)
+            
+            # 💎 Tier 2: Premium (Most Powerful)
+            "databricks-claude-opus-4-1",                   # Most powerful reasoning
+            "databricks-gpt-5",                             # GPT-5
+            "databricks-meta-llama-3-1-405b-instruct",      # Largest model (405B)
+            "databricks-gemini-2-5-pro",                    # Google Gemini 2.5 Pro
+            "databricks-gpt-oss-120b",                      # Custom GPT 120B
+            
+            # ⚡ Tier 3: Fast & Efficient
+            "databricks-gpt-5-mini",                        # GPT-5 Mini
+            "databricks-gpt-5-nano",                        # GPT-5 Nano (Fastest)
+            "databricks-gemini-2-5-flash",                  # Gemini Flash (Fast)
+            "databricks-meta-llama-3-1-8b-instruct",        # Llama 8B (Budget)
+            
+            # 🎨 Other Options
+            "databricks-claude-opus-4",                     # Claude Opus 4
+            "databricks-claude-sonnet-4",                   # Claude Sonnet 4
+            "databricks-claude-3-7-sonnet",                 # Claude 3.7 Sonnet
+            "databricks-gpt-oss-20b",                       # Custom GPT 20B
+            "databricks-gemma-3-12b",                       # Gemma 3 12B
         ],
-        help="Which LLM the multi-agent uses for routing & synthesis"
+        help="Which LLM the multi-agent uses for routing & synthesis (15 models available!)"
     )
     st.session_state.ai.model_name = model_choice
     

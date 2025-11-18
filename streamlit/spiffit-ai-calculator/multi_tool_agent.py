@@ -25,7 +25,7 @@ class MultiToolAgent:
         genie_sales_id: str = None,
         genie_analytics_id: str = None,
         genie_market_id: str = None,
-        orchestrator_model: str = "databricks-gpt-5-1"
+        orchestrator_model: str = "databricks-gpt-5-1"  # GPT-5.1 default (latest OpenAI)
     ):
         """
         Initialize multi-tool agent
