@@ -16,7 +16,20 @@ class SPIFFAgent:
     """
     
     def __init__(self):
-        self.ws = WorkspaceClient()
+        # Get authentication credentials
+        host = os.getenv("DATABRICKS_HOST")
+        token = os.getenv("DATABRICKS_TOKEN")
+        profile = os.getenv("DATABRICKS_PROFILE")
+        
+        # Initialize with priority: PAT token > CLI profile > automatic OAuth
+        if host and token:
+            # PAT token authentication (explicitly set auth_type to avoid conflict with OAuth M2M)
+            self.ws = WorkspaceClient(host=host, token=token, auth_type='pat')
+        elif profile:
+            self.ws = WorkspaceClient(profile=profile)
+        else:
+            # Automatic OAuth M2M (Databricks Apps default)
+            self.ws = WorkspaceClient()
         
         # Genie space configuration
         self.spaces = {

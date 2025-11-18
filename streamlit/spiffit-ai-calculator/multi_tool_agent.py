@@ -36,11 +36,19 @@ class MultiToolAgent:
             genie_market_id: Internal market data Genie space
             orchestrator_model: Model for routing and synthesis
         """
+        # Get authentication credentials
+        host = os.getenv("DATABRICKS_HOST")
+        token = os.getenv("DATABRICKS_TOKEN")
         profile = os.getenv("DATABRICKS_PROFILE")
         
-        if profile:
+        # Initialize with priority: PAT token > CLI profile > automatic OAuth
+        if host and token:
+            # PAT token authentication (explicitly set auth_type to avoid conflict with OAuth M2M)
+            self.workspace = WorkspaceClient(host=host, token=token, auth_type='pat')
+        elif profile:
             self.workspace = WorkspaceClient(profile=profile)
         else:
+            # Automatic OAuth M2M (Databricks Apps default)
             self.workspace = WorkspaceClient()
         
         # Initialize tools

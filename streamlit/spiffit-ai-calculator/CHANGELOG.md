@@ -13,6 +13,25 @@ When deploying new changes:
 
 ## Version History
 
+### v1.4.7-DEMO - 2024-11-18
+**🔧 Fixed Authentication Conflict in ALL Files**
+- ✅ Added `auth_type='pat'` to **ALL** WorkspaceClient calls
+- ✅ Fixed: `ai_helper.py`
+- ✅ Fixed: `multi_tool_agent.py` (was causing the error!)
+- ✅ Fixed: `web_search_tool.py`
+- ✅ Fixed: `spiff_agent.py`
+
+**Root Cause:**
+The error was coming from `multi_tool_agent.py` line 44, not `ai_helper.py`!
+All files that create WorkspaceClient needed the fix.
+
+**Files Updated:**
+- `ai_helper.py` - ✅ (done in v1.4.6)
+- `multi_tool_agent.py` - ✅ Added auth_type='pat'
+- `web_search_tool.py` - ✅ Added auth_type='pat'
+- `spiff_agent.py` - ✅ Added auth_type='pat'
+- `app.py` - Version → v1.4.7-DEMO
+
 ### v1.4.6-DEMO - 2024-11-18
 **🔧 Fixed Authentication Conflict**
 - ✅ Added `auth_type='pat'` to WorkspaceClient to explicitly use PAT token
