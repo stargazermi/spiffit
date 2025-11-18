@@ -29,14 +29,17 @@ class MultiToolAgent:
         orchestrator_model: str = "databricks-gpt-5-1"  # GPT-5.1 default (latest OpenAI)
     ):
         """
-        Initialize multi-tool agent
+        Initialize multi-tool agent with specialized Genie spaces
         
         Args:
             genie_sales_id: Sales performance Genie space
             genie_analytics_id: Analytics/winners Genie space
-            genie_market_id: Internal market data Genie space
-            genie_voice_activations_id: Voice Activations incentive calculations (cross-workspace)
+            genie_market_id: Market intelligence Genie space
+            genie_voice_activations_id: Voice Activations incentive calculations
             orchestrator_model: Model for routing and synthesis
+            
+        Note: Currently all Genie spaces may point to the same backend space,
+        but the architecture supports separate spaces for future expansion.
         """
         # Get authentication credentials
         host = os.getenv("DATABRICKS_HOST")
@@ -53,29 +56,11 @@ class MultiToolAgent:
             # Automatic OAuth M2M (Databricks Apps default)
             self.workspace = WorkspaceClient()
         
-        # Initialize tools
+        # Initialize tools - Multi-Agent Architecture
         self.genie_sales = IncentiveAI(genie_space_id=genie_sales_id) if genie_sales_id else None
         self.genie_analytics = IncentiveAI(genie_space_id=genie_analytics_id) if genie_analytics_id else None
         self.genie_market = IncentiveAI(genie_space_id=genie_market_id) if genie_market_id else None
-        
-        # Voice Activations uses alternate workspace (host + token) for cross-workspace access
-        voice_alt_host = os.getenv("DATABRICKS_VOICE_WORKSPACE_HOST")
-        voice_alt_token = os.getenv("DATABRICKS_VOICE_WORKSPACE_TOKEN")
-        
-        if genie_voice_activations_id:
-            if voice_alt_host and voice_alt_token and voice_alt_token != "PLACEHOLDER_ADD_YOUR_VOICE_WORKSPACE_TOKEN_HERE":
-                # Use alternate workspace for cross-workspace access
-                self.genie_voice_activations = IncentiveAI(
-                    genie_space_id=genie_voice_activations_id,
-                    alt_workspace_host=voice_alt_host,
-                    alt_workspace_token=voice_alt_token
-                )
-            else:
-                # Fallback to default workspace (if in same workspace)
-                self.genie_voice_activations = IncentiveAI(genie_space_id=genie_voice_activations_id)
-        else:
-            self.genie_voice_activations = None
-        
+        self.genie_voice_activations = IncentiveAI(genie_space_id=genie_voice_activations_id) if genie_voice_activations_id else None
         self.web_search = CompetitorSearchTool()
         
         self.orchestrator_model = orchestrator_model
@@ -95,7 +80,7 @@ class MultiToolAgent:
                 "enabled": bool(genie_market_id)
             },
             "genie_voice_activations": {
-                "description": "Voice Activations incentive calculations - use for VOIP MRR, opportunity owner payouts, incremental sales incentives (NOTE: cross-workspace, being fine-tuned by data analyst)",
+                "description": "Voice Activations incentive calculations - use for VOIP MRR, opportunity owner payouts, incremental sales incentives",
                 "enabled": bool(genie_voice_activations_id)
             },
             "web_search": {
@@ -288,6 +273,11 @@ Examples:
         competitor_keywords = ["competitor", "at&t", "verizon", "t-mobile", "comcast", "versus", "compare to"]
         if any(kw in question_lower for kw in competitor_keywords):
             tools.append("web_search")
+        
+        # Check for Voice Activations keywords
+        voice_keywords = ["voice activation", "voip", "mrr", "opportunity owner"]
+        if any(kw in question_lower for kw in voice_keywords):
+            tools.append("genie_voice_activations")
         
         # Check for internal data keywords
         internal_keywords = ["our", "my", "top performer", "leaderboard", "winner", "performance"]

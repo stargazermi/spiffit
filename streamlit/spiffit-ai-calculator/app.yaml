@@ -14,43 +14,39 @@ env:
   - name: STREAMLIT_SERVER_ENABLE_CORS
     value: "false"
   
-  # Genie Space IDs (configured from dlk-hackathon workspace)
+  # Genie Space IDs - Multi-Agent Architecture
+  # NOTE: All agents currently point to the same Genie space "Hackathon- SPIFF Analyzer"
+  # This maintains the multi-agent design while using one backend space
+  # Using WORKING space: 01f0c4ae99271d64835d414b8d43ddfb
   
-  # Sales Performance Space (spg-mocking-bird-sales)
+  # Sales Performance Agent
   - name: GENIE_SALES_SPACE_ID
-    value: "01f0c403c3cf184e9b7f1f6c9ee45905"
+    value: "01f0c4ae99271d64835d414b8d43ddfb"
   
-  # Analytics/Winners Space (spg-mocking-bird-analytics)
+  # Analytics & Winners Agent
   - name: GENIE_ANALYTICS_SPACE_ID
-    value: "01f0c404048613b3b494b1a64a1bca84"
+    value: "01f0c4ae99271d64835d414b8d43ddfb"
   
-  # Market Intelligence Space (spg-mocking-bird-market)
+  # Market Intelligence Agent
   - name: GENIE_MARKET_SPACE_ID
-    value: "01f0c4043acf19dc936c37fd2a8bced3"
+    value: "01f0c4ae99271d64835d414b8d43ddfb"
   
-  # Voice Activations Space (cross-workspace - data analyst fine-tuning)
+  # Voice Activations Agent
   - name: GENIE_VOICE_ACTIVATIONS_SPACE_ID
-    value: "01f0c3e4c6751989828598c96ee0debf"
+    value: "01f0c4ae99271d64835d414b8d43ddfb"
   
-  # Single space for simple calculator (defaults to sales)
+  # Primary Genie Space ID (for backward compatibility)
   - name: GENIE_SPACE_ID
-    value: "01f0c403c3cf184e9b7f1f6c9ee45905"
+    value: "01f0c4ae99271d64835d414b8d43ddfb"
   
   # Databricks Authentication (for Genie access)
   # ⚠️ TEMPORARY: Hardcoded for hackathon demo only!
   - name: DATABRICKS_HOST
     value: "https://dbc-4a93b454-f17b.cloud.databricks.com"
   - name: DATABRICKS_TOKEN
-    value: "dapi5e40d9eb65d1af6c91866e0a35c4"  # ⚠️ TEMP: PAT token for hackathon (dlk-hackathon workspace)
-  
-  # Cross-Workspace Authentication (for Voice Activations Genie in other workspace)
-  # ⚠️ USER: Add your Voice Activations workspace PAT token below after testing main token
-  - name: DATABRICKS_VOICE_WORKSPACE_HOST
-    value: "https://dbc-40f40c74-254e.cloud.databricks.com"  # Voice Activations workspace
-  - name: DATABRICKS_VOICE_WORKSPACE_TOKEN
-    value: "PLACEHOLDER_ADD_YOUR_VOICE_WORKSPACE_TOKEN_HERE"  # ⚠️ USER: Replace with your actual PAT token
+    value: "dapi5e40d9eb65d1af6c91866e0a35c4"  # ⚠️ TEMP: PAT token for hackathon
   
   # SQL Warehouse ID (for executing queries)
   - name: SQL_WAREHOUSE_ID
-    value: "0962fa4cf0922125"  # Same warehouse connected to Genie spaces
+    value: "0962fa4cf0922125"  # Same warehouse connected to all Genie spaces
 
