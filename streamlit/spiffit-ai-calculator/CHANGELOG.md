@@ -4,6 +4,22 @@ All notable changes to the Spiffit application.
 
 ---
 
+## [v2.2.1-SPIFFIT] - 2025-11-18
+### 🎛️ UI Simplification
+**Why:** Remove confusing "Use Genie" checkbox, clarify Foundation Model purpose
+
+**Changed:**
+- ✅ **Removed "Use Genie" checkbox** - Multi-agent always active (3 Genies + Web Search)
+- ✅ **Clarified Foundation Model dropdown** - Now labeled "Agent Brain (Orchestrator)"
+  - Added tooltip: "Which LLM the multi-agent uses for routing & synthesis"
+  - Added status caption showing what's always active
+- ✅ **Improved sidebar UX** - Clearer configuration section
+
+**Files Modified:**
+- `app.py` - Updated sidebar configuration section
+
+---
+
 ## [v2.2.0-SPIFFIT] - 2025-11-18
 ### 🎯 Competitor Intelligence + Clean Demo UI
 **Why:** Incorporate supportingAlternate.md recommendations + clean UI for demo
