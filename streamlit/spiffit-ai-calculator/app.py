@@ -35,7 +35,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.7.5-SPIFFIT"  # 📦 Added tabulate dependency for to_markdown()
+APP_VERSION = "v3.7.6-SPIFFIT"  # 🔧 Fixed generic query routing to default to Voice Genie
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"🎸 Spiffit v{APP_VERSION} - Deployed: {DEPLOYMENT_TIME}")
 
