@@ -30,7 +30,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v2.2.0-SPIFFIT"  # 🎸 Competitor schema + scraper + Chat tab
+APP_VERSION = "v2.2.1-SPIFFIT"  # 🎸 Removed "Use Genie" checkbox, clarified Foundation Model as orchestrator
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
 logger.info("🎸 When a problem comes along... you must Spiff It! 🎸")
@@ -104,22 +104,21 @@ tab1, tab2, tab3, tab4 = st.tabs(["💬 Chat", "🧠 Intelligence", "📐 Archit
 with st.sidebar:
     st.header("⚙️ Configuration")
     
-    use_genie = st.checkbox("Use Genie", value=False)
-    if use_genie:
-        genie_space_id = st.text_input("Genie Space ID", placeholder="Enter your space ID")
-        if genie_space_id:
-            st.session_state.ai.genie_space_id = genie_space_id
-    else:
-        model_choice = st.selectbox(
-            "Foundation Model",
-            [
-                "databricks-meta-llama-3-1-70b-instruct",
-                "databricks-dbrx-instruct",
-                "anthropic-claude-3-sonnet",
-                "openai-gpt-4"
-            ]
-        )
-        st.session_state.ai.model_name = model_choice
+    # Foundation Model for the orchestrator/agent brain
+    model_choice = st.selectbox(
+        "🤖 Agent Brain (Orchestrator)",
+        [
+            "databricks-meta-llama-3-1-70b-instruct",
+            "databricks-dbrx-instruct",
+            "anthropic-claude-3-sonnet",
+            "openai-gpt-4"
+        ],
+        help="Which LLM the multi-agent uses for routing & synthesis"
+    )
+    st.session_state.ai.model_name = model_choice
+    
+    st.caption("🧠 **Multi-Agent Always Active:**")
+    st.caption("✅ 3 Genie Spaces  \n✅ Web Search  \n✅ Smart Routing")
     
     st.markdown("---")
     st.header("🎸 Spiff It Examples")
