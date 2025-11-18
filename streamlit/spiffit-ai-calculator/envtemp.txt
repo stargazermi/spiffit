@@ -1,0 +1,15 @@
+# Environment configuration for Genie Space testing
+# This is the WORKING configuration!
+
+# Databricks Profile (from: databricks auth login --profile dlk-hackathon)
+DATABRICKS_PROFILE=dlk-hackathon
+
+# Databricks Host
+DATABRICKS_HOST=https://dbc-4a93b454-f17b.cloud.databricks.com
+
+# WORKING Genie Space ID - "Hackathon- SPIFF Analyzer"
+GENIE_SPACE_ID=01f0c4ae99271d64835d414b8d43ddfb
+
+# SQL Warehouse ID
+SQL_WAREHOUSE_ID=0962fa4cf0922125
+

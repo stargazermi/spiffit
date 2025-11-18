@@ -17,26 +17,27 @@ env:
   # Genie Space IDs - Multi-Agent Architecture
   # NOTE: All agents currently point to the same Genie space "Hackathon- SPIFF Analyzer"
   # This maintains the multi-agent design while using one backend space
+  # Using WORKING space: 01f0c4ae99271d64835d414b8d43ddfb
   
   # Sales Performance Agent
   - name: GENIE_SALES_SPACE_ID
-    value: "0110c4ae99271d64835d414b8d43ddfb"
+    value: "01f0c4ae99271d64835d414b8d43ddfb"
   
   # Analytics & Winners Agent
   - name: GENIE_ANALYTICS_SPACE_ID
-    value: "0110c4ae99271d64835d414b8d43ddfb"
+    value: "01f0c4ae99271d64835d414b8d43ddfb"
   
   # Market Intelligence Agent
   - name: GENIE_MARKET_SPACE_ID
-    value: "0110c4ae99271d64835d414b8d43ddfb"
+    value: "01f0c4ae99271d64835d414b8d43ddfb"
   
   # Voice Activations Agent
   - name: GENIE_VOICE_ACTIVATIONS_SPACE_ID
-    value: "0110c4ae99271d64835d414b8d43ddfb"
+    value: "01f0c4ae99271d64835d414b8d43ddfb"
   
   # Primary Genie Space ID (for backward compatibility)
   - name: GENIE_SPACE_ID
-    value: "0110c4ae99271d64835d414b8d43ddfb"
+    value: "01f0c4ae99271d64835d414b8d43ddfb"
   
   # Databricks Authentication (for Genie access)
   # ⚠️ TEMPORARY: Hardcoded for hackathon demo only!

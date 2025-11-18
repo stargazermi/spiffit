@@ -13,6 +13,9 @@ import logging
 import re
 from datetime import datetime
 from io import StringIO
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
 from ai_helper import IncentiveAI
 from query_parser import QueryParser
 from multi_tool_agent import MultiToolAgent
@@ -31,7 +34,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.1.0-SPIFFIT"  # 🎯 Automated Demo Story + Sidebar Examples!
+APP_VERSION = "v3.2.2-SPIFFIT"  # 🎸 Enhanced Demo Sidebar Examples!
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
 logger.info("🎸 When a problem comes along... you must Spiff It! 🎸")
@@ -125,6 +128,146 @@ def format_for_email(answer_text):
     
     return True, email_text, csv_data, headers, data_rows
 
+
+def extract_and_display_genie_data(answer_text, key_prefix="data"):
+    """
+    Extract data from Genie response, display as table and chart,
+    and provide download/copy options
+    Returns: (has_data: bool, df: pd.DataFrame or None)
+    """
+    # Try to extract SQL query from answer
+    sql_match = re.search(r'```sql\n(.*?)\n```', answer_text, re.DOTALL)
+    if not sql_match:
+        return False, None
+    
+    sql_query = sql_match.group(1).strip()
+    logger.info(f"📊 Extracted SQL query from Genie response")
+    
+    try:
+        # Execute query to get raw data
+        from databricks.sdk import WorkspaceClient
+        w = WorkspaceClient()
+        warehouse_id = os.getenv("SQL_WAREHOUSE_ID", "0962fa4cf0922125")
+        
+        statement = w.statement_execution.execute_statement(
+            warehouse_id=warehouse_id,
+            statement=sql_query,
+            wait_timeout="30s"
+        )
+        
+        # Extract results
+        if hasattr(statement, 'result') and hasattr(statement.result, 'data_array'):
+            data_array = statement.result.data_array
+            
+            # Get column names
+            if hasattr(statement.result.manifest, 'schema') and hasattr(statement.result.manifest.schema, 'columns'):
+                columns = [col.name for col in statement.result.manifest.schema.columns]
+            else:
+                columns = [f"Column_{i}" for i in range(len(data_array[0]) if data_array else 0)]
+            
+            # Create DataFrame
+            df = pd.DataFrame(data_array, columns=columns)
+            logger.info(f"✅ Created DataFrame with {len(df)} rows and {len(df.columns)} columns")
+            
+            # Display data table
+            st.subheader("📊 Query Results")
+            st.dataframe(df, use_container_width=True)
+            
+            # Create visualization if we have the right columns
+            if 'Incentive_Payout' in df.columns and 'Total_MRR' in df.columns:
+                st.subheader("📈 MRR and Incentive Payout")
+                
+                # Prepare data for chart
+                chart_df = df.copy()
+                
+                # Check if we have an owner/manager column for better x-axis
+                owner_col = None
+                for col in df.columns:
+                    if 'owner' in col.lower() or 'manager' in col.lower():
+                        owner_col = col
+                        break
+                
+                # Create grouped bar chart
+                fig = go.Figure()
+                
+                # Determine x-axis values
+                if owner_col:
+                    x_values = chart_df[owner_col]
+                    x_title = "Opportunity Owner"
+                else:
+                    x_values = chart_df.index
+                    x_title = "Opportunity ID"
+                
+                # Add MRR bars
+                fig.add_trace(go.Bar(
+                    x=x_values,
+                    y=chart_df['Total_MRR'],
+                    name='Total MRR',
+                    marker_color='lightblue'
+                ))
+                
+                # Add Incentive Payout bars
+                fig.add_trace(go.Bar(
+                    x=x_values,
+                    y=chart_df['Incentive_Payout'],
+                    name='Incentive Payout',
+                    marker_color='darkblue'
+                ))
+                
+                fig.update_layout(
+                    title=f"Sum of MRR and Incentive Payout by {x_title}",
+                    xaxis_title=x_title,
+                    yaxis_title="Amount",
+                    barmode='group',
+                    height=400,
+                    xaxis={'tickangle': -45} if owner_col else {}
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
+            
+            # Add download buttons
+            col1, col2 = st.columns(2)
+            
+            # Determine filename and title based on whether this is a pivot or detail
+            is_pivot = any('owner' in col.lower() or 'manager' in col.lower() for col in df.columns)
+            if is_pivot:
+                filename = "voice_incentives_by_owner.csv"
+                title = "Voice Activations Incentives - By Owner"
+            else:
+                filename = "voice_incentives_detail.csv"
+                title = "Voice Activations Incentives - Detail"
+            
+            with col1:
+                # Download CSV
+                csv = df.to_csv(index=False)
+                st.download_button(
+                    label="📥 Download CSV",
+                    data=csv,
+                    file_name=filename,
+                    mime="text/csv",
+                    key=f"download_csv_{key_prefix}",
+                    use_container_width=True
+                )
+            
+            with col2:
+                # Copy for email
+                email_format = f"{title}\n{'='*60}\n\n"
+                email_format += df.to_string(index=False)
+                
+                if st.button("📋 Copy for Email", key=f"copy_email_{key_prefix}", use_container_width=True):
+                    st.toast("✅ Copied to clipboard!")
+                    st.code(email_format, language=None)
+            
+            return True, df
+            
+    except Exception as e:
+        logger.error(f"❌ Error extracting/displaying Genie data: {str(e)}")
+        st.error(f"Could not extract data: {str(e)}")
+        return False, None
+    
+    return False, None
+
+
 # Initialize AI components
 @st.cache_resource
 def init_ai():
@@ -205,14 +348,21 @@ with st.sidebar:
         st.markdown("**🎵 When a problem comes along... you must Spiff It!**")
         st.caption("Click any example to try it:")
         
+        st.markdown("#### ⚡ Quick Hits (Single Genie):")
+        
         if st.button("📊 Top Performers", use_container_width=True, key="demo_sidebar_top"):
             st.session_state.demo_input = "Who are our top sales performers this quarter?"
         
-        if st.button("🏆 SPIFF Winners", use_container_width=True, key="demo_sidebar_winners"):
-            st.session_state.demo_input = "Show me the recent SPIFF competition winners"
+        if st.button("🏆 Winners Circle", use_container_width=True, key="demo_sidebar_winners"):
+            st.session_state.demo_input = "Show me the winners circle for this month's SPIFF competition"
         
-        if st.button("🌐 Competitor Intel", use_container_width=True, key="demo_sidebar_competitor"):
-            st.session_state.demo_input = "What are our competitors offering for sales incentives?"
+        st.markdown("#### 🚀 Multi-Agent Power:")
+        
+        if st.button("🥊 Beat the Competition", use_container_width=True, key="demo_sidebar_beat"):
+            st.session_state.demo_input = "What are competitors offering and how should we beat them?"
+        
+        if st.button("🎯 Next Month's Play", use_container_width=True, key="demo_sidebar_next"):
+            st.session_state.demo_input = "Based on our sales data and competitor intel, what SPIFFs should we offer next month?"
 
 # ============================================================
 # 🎬 DEMO VIEW - Clean presentation view with automated story
@@ -253,7 +403,7 @@ if view_mode == "🎬 Demo":
         # Step 1: Agent greets - show this first!
         greeting_msg = {
             "role": "assistant",
-            "content": "👋 **Good afternoon! It's September 5th** - time to send the SPIFF numbers to the compensation team.\n\nLet me calculate the Voice Activations incentives for you..."
+            "content": "👋 **Good afternoon!** - time to send the August SPIFF numbers to the compensation team.\n\nLet me calculate the Voice Activations incentives for you..."
         }
         st.session_state.demo_messages.append(greeting_msg)
         
@@ -280,12 +430,6 @@ o Customers with existing Voice products who are adding additional, incremental 
                 result = st.session_state.multi_agent.query(voice_prompt)
                 answer = result["answer"]
                 
-                # Filter out SQL queries for clean demo view
-                import re
-                answer = re.sub(r'```sql.*?```', '', answer, flags=re.DOTALL)
-                answer = re.sub(r'\*\*SQL Query:\*\*.*?(?=\n\n|\Z)', '', answer, flags=re.DOTALL)
-                answer = answer.strip()
-                
                 result_msg = {
                     "role": "assistant",
                     "content": answer
@@ -294,29 +438,38 @@ o Customers with existing Voice products who are adding additional, incremental 
                 
                 # Display result immediately
                 with st.chat_message("assistant"):
-                    st.markdown(result_msg["content"])
-                    # Show copy/download buttons
-                    is_copyable, email_format, csv_data, headers, data_rows = format_for_email(result_msg["content"])
-                    if is_copyable and email_format:
-                        col1, col2 = st.columns([3, 1])
-                        with col1:
-                            with st.expander("📧 Copy for Email", expanded=False):
-                                st.caption("Click the copy button on the right →")
-                                st.code(email_format, language=None)
-                        with col2:
-                            st.markdown("####")  # Spacing
-                            st.button("📋 Copy", key=f"copy_auto_1", use_container_width=True)
+                    # Try to extract and display data with chart
+                    has_data, df = extract_and_display_genie_data(answer, key_prefix="voice_demo")
+                    
+                    # If no structured data, show text response
+                    if not has_data:
+                        # Filter out SQL queries for clean demo view
+                        clean_answer = re.sub(r'```sql.*?```', '', answer, flags=re.DOTALL)
+                        clean_answer = re.sub(r'\*\*SQL Query:\*\*.*?(?=\n\n|\Z)', '', clean_answer, flags=re.DOTALL)
+                        clean_answer = clean_answer.strip()
+                        st.markdown(clean_answer)
                         
-                        # Add download CSV if available
-                        if csv_data and headers and data_rows:
-                            st.download_button(
-                                label="📥 Download CSV",
-                                data=csv_data,
-                                file_name="spiff_winners.csv",
-                                mime="text/csv",
-                                key=f"download_auto_1",
-                                use_container_width=True
-                            )
+                        # Try old format_for_email as fallback
+                        is_copyable, email_format, csv_data, headers, data_rows = format_for_email(clean_answer)
+                        if is_copyable and email_format:
+                            col1, col2 = st.columns([3, 1])
+                            with col1:
+                                with st.expander("📧 Copy for Email", expanded=False):
+                                    st.caption("Click the copy button on the right →")
+                                    st.code(email_format, language=None)
+                            with col2:
+                                st.markdown("####")  # Spacing
+                                st.button("📋 Copy", key=f"copy_auto_1", use_container_width=True)
+                            
+                            if csv_data and headers and data_rows:
+                                st.download_button(
+                                    label="📥 Download CSV",
+                                    data=csv_data,
+                                    file_name="spiff_winners.csv",
+                                    mime="text/csv",
+                                    key=f"download_auto_1",
+                                    use_container_width=True
+                                )
                 st.session_state.demo_auto_displayed += 1
             except Exception as e:
                 error_msg = {
@@ -328,7 +481,60 @@ o Customers with existing Voice products who are adding additional, incremental 
                     st.markdown(error_msg["content"])
                 st.session_state.demo_auto_displayed += 1
         
-        # Step 2: Follow up with "Next month's play" - show this immediately too!
+        # Step 2: Create pivot table summary by opportunity owner
+        pivot_msg = {
+            "role": "assistant",
+            "content": "📊 **Here's the summary by Opportunity Owner for the email:**"
+        }
+        st.session_state.demo_messages.append(pivot_msg)
+        
+        # Display pivot message
+        with st.chat_message("assistant"):
+            st.markdown(pivot_msg["content"])
+        st.session_state.demo_auto_displayed += 1
+        
+        with st.spinner("🤔 Creating summary by Opportunity Owner..."):
+            try:
+                # Query for pivot table grouped by opportunity owner
+                pivot_prompt = """Create a pivot table from the Voice Opportunities data that:
+- Groups by Opportunity Owner
+- Sums the Total MRR for each owner
+- Sums the Incentive Payout for each owner
+Show the results sorted by Total MRR descending."""
+                
+                result = st.session_state.multi_agent.query(pivot_prompt)
+                answer = result["answer"]
+                
+                result_msg = {
+                    "role": "assistant",
+                    "content": answer
+                }
+                st.session_state.demo_messages.append(result_msg)
+                
+                # Display result immediately
+                with st.chat_message("assistant"):
+                    # Try to extract and display pivot data with chart
+                    has_data, df = extract_and_display_genie_data(answer, key_prefix="voice_pivot")
+                    
+                    # If no structured data, show text response
+                    if not has_data:
+                        # Filter out SQL queries for clean demo view
+                        clean_answer = re.sub(r'```sql.*?```', '', answer, flags=re.DOTALL)
+                        clean_answer = re.sub(r'\*\*SQL Query:\*\*.*?(?=\n\n|\Z)', '', clean_answer, flags=re.DOTALL)
+                        clean_answer = clean_answer.strip()
+                        st.markdown(clean_answer)
+                st.session_state.demo_auto_displayed += 1
+            except Exception as e:
+                error_msg = {
+                    "role": "assistant",
+                    "content": f"⚠️ Pivot data loading... (Error: {str(e)})"
+                }
+                st.session_state.demo_messages.append(error_msg)
+                with st.chat_message("assistant"):
+                    st.markdown(error_msg["content"])
+                st.session_state.demo_auto_displayed += 1
+        
+        # Step 3: Follow up with "Next month's play" - show this immediately too!
         followup_msg = {
             "role": "assistant",
             "content": "📊 **By the way, here are some ideas for next month's play...**\n\nLet me analyze our sales data and competitor intelligence:"
