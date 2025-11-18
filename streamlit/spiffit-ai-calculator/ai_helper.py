@@ -5,9 +5,11 @@ Handles Genie and Foundation Model API interactions
 
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.serving import ChatMessage, ChatMessageRole
+from databricks.sdk.service.sql import StatementState
 import json
 import os
 import logging
+import time
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -271,8 +273,10 @@ Error details: {error_detail}
                     query_obj = attachment.query
                     logger.info(f"📊 Found query object: {type(query_obj)}")
                     
+                    sql_query = None
                     if hasattr(query_obj, 'query'):
-                        results.append(f"**SQL Query:**\n```sql\n{query_obj.query}\n```")
+                        sql_query = query_obj.query
+                        results.append(f"**SQL Query:**\n```sql\n{sql_query}\n```")
                         logger.info(f"✅ Extracted SQL query")
                     
                     if hasattr(query_obj, 'result'):
@@ -282,8 +286,18 @@ Error details: {error_detail}
                         
                         # Check if result_data is None or empty
                         if result_data is None:
-                            logger.warning("⚠️ Query result is None - query might have failed or returned no data")
-                            results.append("**Query Results:** ⚠️ No data returned (query may have failed or table is empty)")
+                            logger.warning("⚠️ Query result is None - attempting to execute SQL query ourselves")
+                            
+                            # Try to execute the SQL query ourselves to get results
+                            if sql_query and hasattr(self, 'workspace'):
+                                logger.info("🔄 Executing SQL query to get results...")
+                                executed_results = self._execute_sql_query(sql_query)
+                                if executed_results:
+                                    results.append(executed_results)
+                                else:
+                                    results.append("**Query Results:** ⚠️ No data returned (query may have failed or table is empty)")
+                            else:
+                                results.append("**Query Results:** ⚠️ No data returned (query may have failed or table is empty)")
                         elif isinstance(result_data, (list, tuple)):
                             if len(result_data) > 0:
                                 results.append(f"**Query Results:** {len(result_data)} rows found")
@@ -329,6 +343,74 @@ Error details: {error_detail}
         except Exception as e:
             logger.error(f"❌ Error formatting attachments: {str(e)}")
             return f"Genie returned data but couldn't format it: {str(e)}\n\nRaw: {str(attachments)[:300]}"
+    
+    def _execute_sql_query(self, sql_query: str) -> str:
+        """
+        Execute a SQL query against the warehouse and return formatted results
+        """
+        try:
+            # Get warehouse ID from environment (same warehouse Genie uses)
+            warehouse_id = os.getenv("SQL_WAREHOUSE_ID", "0962fa4cf0922125")
+            
+            logger.info(f"🔄 Executing SQL on warehouse: {warehouse_id}")
+            logger.info(f"📝 Query: {sql_query[:100]}...")
+            
+            # Execute SQL statement
+            statement = self.workspace.statement_execution.execute_statement(
+                warehouse_id=warehouse_id,
+                statement=sql_query,
+                wait_timeout="30s"
+            )
+            
+            logger.info(f"✅ Statement executed, waiting for results...")
+            
+            # Wait for completion (synchronous for simplicity)
+            result = statement.result()
+            
+            if not result:
+                logger.warning("⚠️ No result object returned")
+                return None
+            
+            # Check if we got data back
+            if hasattr(result, 'data_array') and result.data_array:
+                logger.info(f"📊 Got {len(result.data_array)} rows")
+                
+                # Format results nicely
+                formatted_lines = [f"**Query Results:** {len(result.data_array)} rows found", "```"]
+                
+                # Show column headers if available
+                if hasattr(result, 'manifest') and hasattr(result.manifest, 'schema') and result.manifest.schema.columns:
+                    headers = [col.name for col in result.manifest.schema.columns]
+                    formatted_lines.append(" | ".join(headers))
+                    formatted_lines.append("-" * (len(" | ".join(headers))))
+                
+                # Show up to 10 rows
+                for i, row in enumerate(result.data_array[:10]):
+                    if hasattr(row, 'values'):
+                        formatted_lines.append(" | ".join([str(v) for v in row.values]))
+                    else:
+                        formatted_lines.append(str(row))
+                
+                if len(result.data_array) > 10:
+                    formatted_lines.append(f"\n... and {len(result.data_array) - 10} more rows")
+                
+                formatted_lines.append("```")
+                
+                return "\n".join(formatted_lines)
+            
+            elif hasattr(result, 'chunk_index'):
+                # Chunked results - fetch them
+                logger.info("📦 Results are chunked, fetching...")
+                return "**Query Results:** Results available but in chunked format (not yet implemented)"
+            
+            else:
+                logger.warning("⚠️ Result object has no data_array")
+                logger.info(f"Result attributes: {dir(result)}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"❌ Error executing SQL query: {str(e)}")
+            return f"**Query Execution Error:** {str(e)}"
     
     def _ask_foundation_model(self, question: str, calculator_results: dict = None):
         """

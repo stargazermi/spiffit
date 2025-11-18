@@ -1,276 +1,179 @@
-# Spiffit Multi-Agent - Changelog
+# 📝 Spiffit Multi-Agent Changelog
 
-## How to Update Version
-
-When deploying new changes:
-1. Update `APP_VERSION` in `app.py` (line 17)
-2. Add entry below with changes
-3. Commit and push
-4. Redeploy in Databricks
-5. Check **🔧 Troubleshooting** tab to verify timestamp updated
+All notable changes to the Spiffit Multi-Agent application.
 
 ---
 
-## Version History
+## [v2.0.5-DEMO] - 2025-11-18
+### 🎯 SQL Execution for Actual Query Results
+**Why:** Genie was returning SQL queries but NOT the actual data results
 
-### v2.0.0-DEMO - 2025-11-18
-**🎉 Major UI Simplification & Rebranding**
+**Changed:**
+- ✅ Added `_execute_sql_query()` method to execute SQL queries ourselves
+- ✅ Enhanced `_format_genie_attachments()` to detect `result=None` and execute SQL
+- ✅ Added `SQL_WAREHOUSE_ID` environment variable configuration
+- ✅ Displays actual data tables with headers and up to 10 rows
+- ✅ Logs SQL execution steps for debugging
 
-**Branding:**
-- Renamed from "Spiffit AI Calculator" to "Spiffit Multi-Agent"
-- Emphasis on multi-agent architecture for better stakeholder communication
+**Performance Impact:**
+- Adds ~2-5s to Genie query time
+- But displays **real results** instead of just SQL query text!
+- Net improvement for user experience 🎉
 
-**Tabs Restructured:**
-- **🧠 Intelligence** (NEW): Single unified tab replacing old Chat + Competitor Intel
-  - All queries in one place
-  - Real-time visibility of which Genies were called
-  - Smart routing with graceful fallbacks
-  - Clickable examples in sidebar (no more copy/paste!)
-- **📐 Architecture & Tech Stack** (NEW): Complete system overview
-  - Multi-agent flow diagram
-  - Databricks components used (Genie, Foundation Models, Unity Catalog, etc.)
-  - Foundation models in use (Llama 3.1 70B, GPT-5.1, etc.)
-  - Genie space configuration status
-  - Guide to verify Genie calls in Databricks UI
-- **🔧 Troubleshooting**: Kept with authentication logs and connection testing
+**Files Changed:**
+- `ai_helper.py` - Added SQL execution logic
+- `app.yaml` - Added SQL_WAREHOUSE_ID env var
+- `env.example` - Added SQL_WAREHOUSE_ID config
+- `app.py` - Updated version to v2.0.5
 
-**Sidebar Improvements:**
-- Clickable example queries organized by complexity:
-  - 🔍 Single Agent (one Genie)
-  - 🤖 Multi-Agent (multiple Genies + routing)
-  - 🧠 Smart Routing (AI chooses best sources)
+**Documentation:**
+- Created `SQL_EXECUTION_UPDATE.md` with technical details
 
-**User Experience:**
-- Clearer demonstration of multi-agent capabilities
-- Better visibility into which agents handle each query
-- Architecture tab helps explain the system to stakeholders
-- Examples showcase multi-Genie routing and AI reasoning
+---
 
-**Files Updated:**
-- `app.py` - Complete UI restructure, version → v2.0.0-DEMO
-- `README.md` - Updated for new branding and features
-- `CHANGELOG.md` - Added v2.0.0 entry
+## [v2.0.4-DEMO] - 2025-11-18
+### 🎯 Better Result Data Formatting + Performance Logging
+**Changed:**
+- ✅ Enhanced `_format_genie_attachments()` to correctly parse `result` from `query` object
+- ✅ Displays up to 10 rows of data with row counts
+- ✅ Handles empty/None results with helpful warnings
+- ✅ Added performance feedback in UI for slow queries
+- ✅ Explains SQL warehouse cold start delays
+- ✅ Provides tips to improve performance
 
-### v1.4.7-DEMO - 2024-11-18
-**🔧 Fixed Authentication Conflict in ALL Files**
-- ✅ Added `auth_type='pat'` to **ALL** WorkspaceClient calls
-- ✅ Fixed: `ai_helper.py`
-- ✅ Fixed: `multi_tool_agent.py` (was causing the error!)
-- ✅ Fixed: `web_search_tool.py`
-- ✅ Fixed: `spiff_agent.py`
+**Files Changed:**
+- `ai_helper.py` - Enhanced attachment parsing for `query.result`
+- `app.py` - Added performance timing and user feedback
 
-**Root Cause:**
-The error was coming from `multi_tool_agent.py` line 44, not `ai_helper.py`!
-All files that create WorkspaceClient needed the fix.
+---
 
-**Files Updated:**
-- `ai_helper.py` - ✅ (done in v1.4.6)
-- `multi_tool_agent.py` - ✅ Added auth_type='pat'
-- `web_search_tool.py` - ✅ Added auth_type='pat'
-- `spiff_agent.py` - ✅ Added auth_type='pat'
-- `app.py` - Version → v1.4.7-DEMO
+## [v2.0.3-DEMO] - 2025-11-18
+### 🎯 Handle GenieMessage Objects
+**Why:** Genie API returns `GenieMessage` directly (not `Conversation` with `messages` array)
 
-### v1.4.6-DEMO - 2024-11-18
-**🔧 Fixed Authentication Conflict**
-- ✅ Added `auth_type='pat'` to WorkspaceClient to explicitly use PAT token
-- ✅ Overrides automatic OAuth M2M credentials from Databricks Apps
-- ✅ Resolves "more than one authorization method configured" error
+**Changed:**
+- ✅ Added logic to detect `GenieMessage` vs `Conversation` objects
+- ✅ Prioritize extracting data from `attachments` for `GenieMessage`
+- ✅ Fall back to `content` with warning if no attachments
+- ✅ Enhanced logging to show response type and attributes
 
-**The Problem:**
-```
-ValueError: more than one authorization method configured: oauth and pat
-Databricks Apps automatically sets DATABRICKS_CLIENT_ID/CLIENT_SECRET
-When we add DATABRICKS_TOKEN, SDK sees both and fails
-```
+**Files Changed:**
+- `ai_helper.py` - Updated `_ask_genie()` to handle both response types
 
-**The Solution:**
-```python
-self.workspace = WorkspaceClient(host=host, token=token, auth_type='pat')
-#                                                        ^^^^^^^^^^^^^^^^
-#                                            Explicitly use PAT, ignore OAuth
-```
+**Documentation:**
+- Created `GENIE_RESPONSE_FIX.md`
 
-**Files Updated:**
-- `ai_helper.py` - Added `auth_type='pat'` parameter
-- `app.py` - Version → v1.4.6-DEMO
+---
 
-### v1.4.5-DEMO - 2024-11-18
-**⚠️ Temporary: Hardcoded PAT Token for Hackathon**
-- Token hardcoded in app.yaml (not committed to Git)
-- Manual edit in Databricks Git Folder only
-- **TODO: Remove after hackathon**
+## [v2.0.2-DEMO] - 2025-11-18
+### 🎯 Critical Fix: Extract ASSISTANT Messages
+**Why:** App was echoing user's question instead of showing Genie's answer
 
-### v1.4.4 - 2024-11-18
-**🔧 Fixed Secret Resource Definition**
-- ✅ Added `resources` section to `app.yaml` to define secret as a resource
-- ✅ Secrets must be registered as resources before referencing in env vars
-- ✅ Changed env var to reference resource name instead of secret directly
+**Changed:**
+- ✅ Filter for `ASSISTANT` role messages (not `USER` messages)
+- ✅ Detect if content is echoed question and look for attachments
+- ✅ Added extensive debug logging for message extraction
 
-**The Correct Format:**
-```yaml
-# Step 1: Define resource
-resources:
-  - name: databricks-pat
-    secret:
-      scope: spiffit-secrets
-      key: databricks-pat-token
+**Files Changed:**
+- `ai_helper.py` - Updated `_ask_genie()` to filter messages by role
 
-# Step 2: Reference resource in env var
-env:
-  - name: DATABRICKS_TOKEN
-    valueFrom: databricks-pat
-```
+**Documentation:**
+- Created `GENIE_RESPONSE_FIX.md`
 
-**Files Updated:**
-- `app.yaml` - Added resources section, simplified env var reference
-- `app.py` - Version → v1.4.4
+---
 
-### v1.4.3 - 2024-11-18
-**🔧 Critical Fix: app.yaml Secret Syntax**
-- ✅ Fixed `DATABRICKS_TOKEN` secret reference syntax in `app.yaml`
-- ✅ Changed from `value_from:` (incorrect) to `valueFrom:` (correct)
-- ✅ Format: `valueFrom: "scope/key"` instead of nested object
+## [v2.0.1-DEMO] - 2025-11-18
+### 🔍 Response Parsing + Debug Logging
+**Changed:**
+- ✅ Enhanced Genie response parsing with detailed logging
+- ✅ Added logging for response type, attributes, and message extraction
+- ✅ Improved error messages for debugging
 
-**The Problem:**
-```yaml
-# ❌ WRONG (caused deployment error)
-- name: DATABRICKS_TOKEN
-  value_from:
-    secret_scope: spiffit-secrets
-    secret_key: databricks-pat-token
-```
+**Files Changed:**
+- `ai_helper.py` - Added comprehensive logging
 
-**The Fix:**
-```yaml
-# ✅ CORRECT
-- name: DATABRICKS_TOKEN
-  valueFrom: "spiffit-secrets/databricks-pat-token"
-```
+---
 
-**Files Updated:**
-- `app.yaml` - Fixed secret reference syntax
-- `app.py` - Version → v1.4.3
+## [v2.0.0-DEMO] - 2025-11-18
+### 🎉 Major UI Overhaul: Unified Multi-Agent Experience
+**Changed:**
+- ✅ Rebranded to "Spiffit Multi-Agent"
+- ✅ Restructured UI into 3 main tabs:
+  - **🧠 Intelligence** - Unified chat interface
+  - **📐 Architecture & Tech Stack** - System overview
+  - **🔧 Troubleshooting** - Debug tools
+- ✅ Added clickable example questions in sidebar
+- ✅ Real-time visibility: "🧠 Genies Called: Sales, Analytics, Market"
+- ✅ Comprehensive architecture documentation
+- ✅ Added guide on verifying Genie calls in Databricks
 
-### v1.4.2 - 2024-11-18
-**📜 Added Comprehensive Authentication Logging**
-- ✅ Added detailed logging to `ai_helper.py` showing authentication method used
-- ✅ Logs show which env vars are set (HOST, TOKEN, PROFILE, GENIE_SPACE_ID)
-- ✅ Added real-time log viewer in Troubleshooting tab
-- ✅ Enhanced environment variable display with Auth and Genie sections
-- ✅ Logs capture Genie API calls and errors
+**Removed:**
+- ❌ Separate "Chat" and "Competitor Intel" tabs (now unified in Intelligence)
+- ❌ Old "AI Reasoning" tab (merged into Architecture)
 
-**What You'll See:**
-- 🔐 Authentication method being used (PAT Token / CLI Profile / OAuth M2M)
-- 📋 Environment variables status
-- 💬 Genie API call attempts with space ID
-- ❌ Detailed error messages if Genie fails
+**Files Changed:**
+- `app.py` - Complete UI restructure
+- `README.md` - Updated documentation
 
-**Files Updated:**
-- `ai_helper.py` - Added logging to `__init__` and `_ask_genie`
-- `app.py` - Added log capture and viewer in Troubleshooting tab
-- Version → `v1.4.2`
+**Documentation:**
+- Created `V2_UPGRADE_SUMMARY.md`
+- Created `CHANGELOG.md`
 
-### v1.4.1 - 2024-11-18
-**🔧 Critical Fix: Async Wait Handling**
-- ✅ Fixed Genie API to properly handle `Wait` object from `start_conversation()`
-- ✅ Added `.result()` call to wait for async conversation completion
-- ✅ Resolves "'messages' KeyError" error when querying Genie
-- ✅ Updated `test-genie-pat.py` with same fix
+---
 
-**Technical Details:**
-- `start_conversation()` returns `Wait` object (Databricks SDK async pattern)
-- Must call `wait_obj.result()` to get actual `Conversation` object
-- This is the final fix needed for Genie integration! 🎉
+## [v1.2.0] - 2025-11-18
+### Added
+- Multi-tool agent with web search capability
+- Competitor intelligence integration
+- Graceful error handling for Genie API
 
-**Files Updated:**
-- `ai_helper.py` - Added `.result()` to Genie query
-- `test-genie-pat.py` - Test script validates this works
-- `app.py` - Version bumped to v1.4.1
+### Fixed
+- PAT token authentication for Genie access
+- OAuth M2M vs PAT token conflicts
 
-### v1.4.0 - 2024-11-18
-**🔐 PAT Token Authentication for Genie**
-- ✅ Added PAT Token authentication support (fixes OAuth M2M limitation)
-- ✅ Databricks Secrets integration for secure token storage
-- ✅ Updated `ai_helper.py` authentication priority: PAT token → CLI profile → OAuth
-- ✅ `setup-genie-secrets.ps1` script for easy secret setup
-- ✅ `GENIE_PAT_TOKEN_SETUP.md` comprehensive guide
-- ✅ No tokens in Git (secure by default)
-- ✅ Fixed Genie test button tab switching issue
+---
 
-**Why This Matters:**
-- Databricks Apps use OAuth M2M by default (doesn't work with Genie)
-- PAT tokens provide full Genie API access
-- Secrets keep tokens secure and out of version control
+## [v1.1.0] - 2025-11-18
+### Added
+- Troubleshooting tab with environment variable display
+- Authentication method logging
+- Deployment version tracking
 
-**Setup Required:**
-1. Generate PAT token in Databricks UI
-2. Run `.\setup-genie-secrets.ps1` to store securely
-3. Ensure Genie spaces are shared with PAT token owner
-4. Redeploy app
+### Fixed
+- Genie API method (changed to `start_conversation`)
+- Handle `Wait` objects from Genie API
 
-### v1.3.2 - 2024-11-17
-**🔧 Genie API Fix (Simplified)**
-- ✅ Corrected Genie API call: `start_conversation(space_id, content)`
-- ✅ Single API call creates conversation + sends message
-- ✅ Comprehensive response parsing (messages, content, text, attachments)
-- ✅ Debug output if response format is unexpected
+---
 
-**Technical Details:**
-- Correct API: `start_conversation(space_id=..., content=question)`
-- This creates the conversation AND sends the first message
-- Response parsing handles multiple formats for SDK version compatibility
-
-### v1.3.1 - 2024-11-17 (DEPRECATED - wrong API flow)
-**🔧 Critical Fix: Genie API**
-- ❌ Tried two-step flow (was incorrect)
-- Issue: `start_conversation()` needs `content` parameter
-
-### v1.3.0 - 2024-11-17
-**🎉 Major Feature: Competitor Intelligence**
-- ✅ Added **Multi-Tool Agent** with smart routing
-- ✅ New **Competitor Intelligence** tab
-- ✅ **Web Search Tool** for competitor SPIFF research
-- ✅ Orchestration with **GPT-5.1** from serving endpoints
-- ✅ Automatic routing between Genie spaces and web search
-- ✅ Result synthesis across multiple data sources
-- ✅ Quick action buttons for common queries
-- ✅ Tool usage transparency (shows routing decisions)
-
-**Architecture:**
-- Multi-tool agent routes queries to appropriate tools
-- Genie spaces → internal data (sales, analytics, market)
-- Web search → external competitor data
-- Foundation Model → orchestration & synthesis
-
-**Demo Queries:**
-- "What SPIFFs is AT&T offering?"
-- "Compare our programs with Verizon"
-- "Recommend competitive SPIFFs for next month"
-
-### v1.2.0 - 2024-11-17
-**Changes:**
-- ✅ Fixed Genie API method (`start_conversation` instead of `ask_question`)
-- ✅ Added deployment version and timestamp to troubleshooting tab
-- ✅ Added comprehensive troubleshooting tab with environment info
-- ✅ Added test buttons for Databricks and Genie connections
-
-**Features:**
-- Environment variable display
-- Connection status indicators
-- Configuration viewer
-- Quick action test buttons
-
-### v1.1.0 - 2024-11-17
-**Changes:**
-- ✅ Added troubleshooting tab for debugging
-- ✅ Connected to Genie spaces (spg-mocking-bird-sales, analytics, market)
-- ✅ Environment variables configured in app.yaml
-
-### v1.0.0 - 2024-11-17
-**Initial Release:**
-- Basic chat interface
-- Query parser for intent extraction
-- Foundation Model fallback
+## [v1.0.0] - 2025-11-18
+### Initial Release
+- Basic Streamlit app for incentive calculations
 - Genie space integration
-- Example questions sidebar
+- Foundation Model API fallback
+- Multi-Genie workflows
+- Smart routing
 
+---
+
+## 📖 Version Numbering
+
+Format: `vMAJOR.MINOR.PATCH-STAGE`
+
+- **MAJOR**: Complete rewrite or major breaking changes
+- **MINOR**: New features or significant improvements
+- **PATCH**: Bug fixes and minor improvements
+- **STAGE**: `DEV` (development) or `DEMO` (hackathon demo)
+
+---
+
+## 🔗 Related Documentation
+
+- `V2_UPGRADE_SUMMARY.md` - v2.0.0 upgrade details
+- `GENIE_RESPONSE_FIX.md` - v2.0.2/v2.0.3 Genie parsing fix
+- `SQL_EXECUTION_UPDATE.md` - v2.0.5 SQL execution implementation
+- `DEPLOYMENT_SCRIPTS.md` - Automated deployment guide
+- `GENIE_PAT_TOKEN_SETUP.md` - PAT token authentication guide
+
+---
+
+**For full technical details, see individual documentation files.**

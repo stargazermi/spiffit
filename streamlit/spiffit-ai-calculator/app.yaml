@@ -37,5 +37,9 @@ env:
   - name: DATABRICKS_HOST
     value: "https://dbc-4a93b454-f17b.cloud.databricks.com"
   - name: DATABRICKS_TOKEN
-    value: "YOUR_PAT_TOKEN_HERE"  # ⚠️ Replace with actual token from .env file
+    value: "dapi5e40d9eb65d1af6c91866e0a35c4"  # ⚠️ TEMP: PAT token for hackathon
+  
+  # SQL Warehouse ID (for executing queries)
+  - name: SQL_WAREHOUSE_ID
+    value: "0962fa4cf0922125"  # Same warehouse connected to Genie spaces
 
