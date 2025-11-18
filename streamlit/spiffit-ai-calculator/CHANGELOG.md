@@ -13,6 +13,23 @@ When deploying new changes:
 
 ## Version History
 
+### v1.4.1 - 2024-11-18
+**🔧 Critical Fix: Async Wait Handling**
+- ✅ Fixed Genie API to properly handle `Wait` object from `start_conversation()`
+- ✅ Added `.result()` call to wait for async conversation completion
+- ✅ Resolves "'messages' KeyError" error when querying Genie
+- ✅ Updated `test-genie-pat.py` with same fix
+
+**Technical Details:**
+- `start_conversation()` returns `Wait` object (Databricks SDK async pattern)
+- Must call `wait_obj.result()` to get actual `Conversation` object
+- This is the final fix needed for Genie integration! 🎉
+
+**Files Updated:**
+- `ai_helper.py` - Added `.result()` to Genie query
+- `test-genie-pat.py` - Test script validates this works
+- `app.py` - Version bumped to v1.4.1
+
 ### v1.4.0 - 2024-11-18
 **🔐 PAT Token Authentication for Genie**
 - ✅ Added PAT Token authentication support (fixes OAuth M2M limitation)

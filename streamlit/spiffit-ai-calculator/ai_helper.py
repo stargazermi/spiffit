@@ -70,14 +70,18 @@ class IncentiveAI:
         """
         Query using Genie space
         
-        API flow: start_conversation with content creates both conversation and first message
+        API flow: start_conversation returns Wait object, call .result() to get conversation
         """
         try:
             # Start conversation WITH the question (creates conversation + first message)
-            conversation = self.workspace.genie.start_conversation(
+            # This returns a Wait object - need to call .result()
+            wait_obj = self.workspace.genie.start_conversation(
                 space_id=self.genie_space_id,
                 content=question  # Initial message
             )
+            
+            # Wait for Genie to process the query
+            conversation = wait_obj.result()
             
             if not conversation:
                 return "Failed to start Genie conversation (no response)"
