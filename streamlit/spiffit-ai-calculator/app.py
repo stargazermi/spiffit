@@ -16,7 +16,7 @@ from multi_tool_agent import MultiToolAgent
 from web_search_tool import CompetitorSearchTool
 
 # Version and deployment tracking
-APP_VERSION = "v1.3.2"  # Update this with each deployment (fixed Genie API call)
+APP_VERSION = "v1.4.0"  # PAT token authentication for Genie access
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 # Page configuration

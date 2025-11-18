@@ -13,6 +13,27 @@ When deploying new changes:
 
 ## Version History
 
+### v1.4.0 - 2024-11-18
+**🔐 PAT Token Authentication for Genie**
+- ✅ Added PAT Token authentication support (fixes OAuth M2M limitation)
+- ✅ Databricks Secrets integration for secure token storage
+- ✅ Updated `ai_helper.py` authentication priority: PAT token → CLI profile → OAuth
+- ✅ `setup-genie-secrets.ps1` script for easy secret setup
+- ✅ `GENIE_PAT_TOKEN_SETUP.md` comprehensive guide
+- ✅ No tokens in Git (secure by default)
+- ✅ Fixed Genie test button tab switching issue
+
+**Why This Matters:**
+- Databricks Apps use OAuth M2M by default (doesn't work with Genie)
+- PAT tokens provide full Genie API access
+- Secrets keep tokens secure and out of version control
+
+**Setup Required:**
+1. Generate PAT token in Databricks UI
+2. Run `.\setup-genie-secrets.ps1` to store securely
+3. Ensure Genie spaces are shared with PAT token owner
+4. Redeploy app
+
 ### v1.3.2 - 2024-11-17
 **🔧 Genie API Fix (Simplified)**
 - ✅ Corrected Genie API call: `start_conversation(space_id, content)`
