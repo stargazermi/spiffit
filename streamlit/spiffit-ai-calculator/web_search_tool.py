@@ -63,8 +63,7 @@ class CompetitorSearchTool:
                         "Dedicated Internet: Contact for enterprise pricing"
                     ]
                 },
-                    "focus": "Enterprise deals, new customer acquisition"
-                }
+                "focus": "Enterprise deals, new customer acquisition"
             },
             "Spectrum": {
                 "q4_2024": {
