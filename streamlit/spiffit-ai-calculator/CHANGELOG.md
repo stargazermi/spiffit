@@ -4,6 +4,34 @@ All notable changes to the Spiffit application.
 
 ---
 
+## [v2.3.0-SPIFFIT] - 2025-11-18
+### 🎯 Demo Experience Enhancement
+**Why:** Make Chat tab the primary demo interface with cleaner UX
+
+**Changed:**
+- ✅ **Sidebar buttons now trigger Chat tab** - All example buttons send queries to the clean Chat tab (not Intelligence/debug tab)
+- ✅ **SQL queries hidden in Chat tab** - Filters out verbose SQL code blocks for cleaner demo presentation
+  - Removes `**SQL Query:**` sections
+  - Removes standalone SQL code blocks
+  - Keeps only the natural language answer and data results
+- ✅ **Intelligence tab still shows full details** - Debug view unchanged for troubleshooting
+
+**Technical Details:**
+- Added `chat_input_from_button` session state for programmatic chat input
+- Implemented regex filtering to remove SQL blocks: `\*\*SQL Query:\*\*\s*```sql.*?```` and ````sql.*?````
+- Added `import re` for pattern matching
+
+**Files Modified:**
+- `app.py` - Updated sidebar button handlers, added SQL filtering to Chat tab
+
+**Demo Flow:**
+1. User clicks sidebar example → Query appears in Chat tab
+2. Agent processes with multi-tool routing (Genies + web search)
+3. Chat shows only: natural language answer + data results
+4. Intelligence tab still shows: routing details + SQL + raw results
+
+---
+
 ## [v2.2.2-SPIFFIT] - 2025-11-18
 ### 🐛 Critical Bugfix
 **Why:** Deployment failed due to syntax errors in web_search_tool.py

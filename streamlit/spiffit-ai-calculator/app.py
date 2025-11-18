@@ -10,6 +10,7 @@ load_dotenv()
 import streamlit as st
 import os
 import logging
+import re
 from datetime import datetime
 from io import StringIO
 from ai_helper import IncentiveAI
@@ -30,7 +31,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v2.2.2-SPIFFIT"  # 🐛 Fixed indentation errors in web_search_tool.py
+APP_VERSION = "v2.3.0-SPIFFIT"  # 🎸 Sidebar buttons → Chat tab, Hide SQL in demo
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
 logger.info("🎸 When a problem comes along... you must Spiff It! 🎸")
@@ -125,27 +126,29 @@ with st.sidebar:
     st.markdown("**🎵 When a problem comes along... you must Spiff It!**")
     st.markdown("*Click any example to try it:*")
     
-    # Initialize input state
+    # Initialize input state (for programmatic button clicks)
+    if "chat_input_from_button" not in st.session_state:
+        st.session_state.chat_input_from_button = None
     if "intelligence_input" not in st.session_state:
         st.session_state.intelligence_input = None
     
     st.markdown("**⚡ Quick Hits (Single Genie):**")
     if st.button("📊 Top performers", use_container_width=True, key="ex1"):
-        st.session_state.intelligence_input = "Show me the top performers this quarter"
+        st.session_state.chat_input_from_button = "Show me the top performers this quarter"
     if st.button("🏆 Winners circle", use_container_width=True, key="ex2"):
-        st.session_state.intelligence_input = "Who won the last SPIFF competition?"
+        st.session_state.chat_input_from_button = "Who won the last SPIFF competition?"
     
     st.markdown("**🚀 Multi-Agent Power:**")
     if st.button("⚔️ Beat the competition!", use_container_width=True, key="ex3"):
-        st.session_state.intelligence_input = "Compare our top performers with AT&T's SPIFF programs"
+        st.session_state.chat_input_from_button = "Compare our top performers with AT&T's SPIFF programs"
     if st.button("💡 Next month's play", use_container_width=True, key="ex4"):
-        st.session_state.intelligence_input = "Based on our sales data and competitor intel, what SPIFFs should we offer next month?"
+        st.session_state.chat_input_from_button = "Based on our sales data and competitor intel, what SPIFFs should we offer next month?"
     if st.button("📈 Market domination", use_container_width=True, key="ex5"):
-        st.session_state.intelligence_input = "How do our incentives compare to Verizon and T-Mobile?"
+        st.session_state.chat_input_from_button = "How do our incentives compare to Verizon and T-Mobile?"
     
     st.markdown("**🧠 Full Auto (Smart Routing):**")
     if st.button("🎯 Spiff it GOOD!", use_container_width=True, key="ex6"):
-        st.session_state.intelligence_input = "Should we increase our SPIFF budget? Consider sales performance, leaderboards, and what competitors are doing."
+        st.session_state.chat_input_from_button = "Should we increase our SPIFF budget? Consider sales performance, leaderboards, and what competitors are doing."
 
 # Tab 1: Chat (Clean Demo View)
 with tab1:
@@ -174,8 +177,12 @@ I'm your AI-powered SPIFF intelligence agent. I can help you:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
     
-    # Chat input
-    chat_prompt = st.chat_input("Ask anything about SPIFFs, sales, or competitors...", key="chat_input")
+    # Chat input (check for programmatic input from sidebar first)
+    if st.session_state.chat_input_from_button:
+        chat_prompt = st.session_state.chat_input_from_button
+        st.session_state.chat_input_from_button = None  # Clear after use
+    else:
+        chat_prompt = st.chat_input("Ask anything about SPIFFs, sales, or competitors...", key="chat_input")
     
     if chat_prompt:
         # Add user message
@@ -192,17 +199,28 @@ I'm your AI-powered SPIFF intelligence agent. I can help you:
                     result = st.session_state.multi_agent.query(chat_prompt)
                     elapsed = time.time() - start_time
                 
-                # Display ONLY the answer (clean for demo)
-                st.markdown(result["answer"])
+                # Filter out SQL queries for clean demo view
+                answer = result["answer"]
+                
+                # Remove SQL Query sections (they're verbose for demo)
+                # Remove "**SQL Query:**\n```sql\n...\n```" blocks
+                answer = re.sub(r'\*\*SQL Query:\*\*\s*```sql.*?```', '', answer, flags=re.DOTALL)
+                # Remove standalone SQL code blocks
+                answer = re.sub(r'```sql.*?```', '', answer, flags=re.DOTALL)
+                # Clean up extra whitespace
+                answer = re.sub(r'\n{3,}', '\n\n', answer).strip()
+                
+                # Display clean answer
+                st.markdown(answer)
                 
                 # Add subtle performance indicator
                 if elapsed > 15:
                     st.caption(f"_Response time: {elapsed:.1f}s_")
                 
-                # Save response (clean - no metadata)
+                # Save response (clean - no SQL queries)
                 st.session_state.chat_messages.append({
                     "role": "assistant",
-                    "content": result["answer"]
+                    "content": answer
                 })
                 
             except Exception as e:
