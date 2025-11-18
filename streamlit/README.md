@@ -1,83 +1,108 @@
-# Streamlit Hello World App for Databricks
+# Streamlit Apps
 
-## 🎯 Purpose
-Simple "Hello World" app to test Databricks Apps deployment workflow.
+This folder contains separate Streamlit applications for the hackathon.
 
-## 📁 Files
-- `app.py` - Main Streamlit application
-- `app.yaml` - Databricks App configuration (port 8000)
-- `requirements.txt` - Python dependencies
-- `README.md` - This file
+## 📁 Apps
+
+### 1. **spiffit-hello/**
+Simple "Hello World" app to test Databricks Apps deployment.
+
+- **Purpose:** Test deployment workflow
+- **Files:** `app.py`, `app.yaml`, `requirements.txt`
+- **Deploy Path:** `streamlit/spiffit-hello/`
+
+[See app README](spiffit-hello/README.md)
+
+---
+
+### 2. **spiffit-ai-calculator/**
+AI-powered incentive calculator with natural language interface.
+
+- **Purpose:** Main hackathon app (or starting point)
+- **Files:** 
+  - `app.py` - Main Streamlit app
+  - `ai_helper.py` - AI/LLM integration
+  - `query_parser.py` - Query parsing
+  - `app.yaml`, `requirements.txt`
+- **Deploy Path:** `streamlit/spiffit-ai-calculator/`
+
+[See app README](spiffit-ai-calculator/README.md)
+
+---
 
 ## 🚀 Quick Start
 
-### Option 1: Test Locally (Before Databricks)
+### Test Locally
 ```bash
-cd streamlit
+# Hello World
+cd streamlit/spiffit-hello
+pip install -r requirements.txt
+streamlit run app.py --server.port 8000
+
+# AI Calculator
+cd streamlit/spiffit-ai-calculator
 pip install -r requirements.txt
 streamlit run app.py --server.port 8000
 ```
-Then open: http://localhost:8000
 
-### Option 2: Deploy to Databricks Apps
+### Deploy to Databricks
 
-#### Step 1: Push to Git
+1. **Push to Git:**
 ```bash
 git add streamlit/
-git commit -m "Add hello world Streamlit app"
+git commit -m "Add Streamlit apps"
 git push origin main
 ```
 
-#### Step 2: Set up Databricks Workspace
-1. Go to your Databricks workspace
-2. Click **Repos** in the left sidebar
-3. Click **Add Repo**
-4. Enter your GitHub URL: `https://github.com/stargazermi/spiffit`
-5. Click **Create Repo**
+2. **In Databricks:**
+- Go to **Apps**
+- Click **Create App**
+- **Source:** Your repo (`spiffit`)
+- **Path:** Select `streamlit/spiffit-hello/` or `streamlit/spiffit-ai-calculator/`
+- **Deploy!**
 
-#### Step 3: Deploy the App
-1. In Databricks, go to **Apps** (or **Serverless Apps**)
-2. Click **Create App**
-3. Configure:
-   - **Name:** `hello-world-test`
-   - **Source:** Select your repo (`spiffit`)
-   - **Path:** `streamlit/`
-   - **Compute:** Select a cluster or use serverless
-4. Click **Create**
-5. Wait for deployment (2-3 minutes)
-6. Click the app URL to view!
+---
 
-## 🔧 Troubleshooting
+## 📚 Additional Resources
 
-### App won't start?
-- Check that `app.yaml` is in the same folder as `app.py`
-- Verify port 8000 is specified
-- Check Databricks logs for errors
+- **AI Integration Guide:** `../docs/ai_integration_guide.md` - Detailed steps for Hour 5-6
+- **Genie Setup Guide:** `../docs/GENIE_SETUP.md`
+- **Create Genie Spaces:** `../docs/CREATE_GENIE_SPACES_GUIDE.md`
+- **Autonomous Agent Guide:** `../docs/AUTONOMOUS_SPIFF_AGENT.md`
+- **SQL Setup:** `../sql/` - Mock data creation scripts
+- **Calculator Code:** `../cursor/prototypes/02_incentive_calculator.py`
+- **Implementation Plans:** `../cursor/automation-ideas/implementation-plans/`
 
-### Dependencies not installing?
-- Make sure `requirements.txt` is present
-- Try adding `--upgrade pip` to requirements
+---
 
-### Can't access the app?
-- Verify your Databricks workspace permissions
-- Check that the app status shows "Running"
-- Try refreshing the page
+## 🎯 Folder Structure
 
-## 📝 Next Steps
+```
+streamlit/
+├── README.md (this file - app overview)
+│
+├── spiffit-hello/
+│   ├── app.py
+│   ├── app.yaml
+│   ├── requirements.txt
+│   └── README.md
+│
+└── spiffit-ai-calculator/
+    ├── app.py
+    ├── ai_helper.py
+    ├── query_parser.py
+    ├── spiff_agent.py
+    ├── spiff_agent_app.py
+    ├── app.yaml
+    ├── requirements.txt
+    └── README.md
 
-Once this works, you can:
-1. Replace `app.py` with your real hackathon app
-2. Add Delta Lake connections
-3. Add LLM/AI integrations
-4. Connect to your incentive data
+📁 Documentation and SQL scripts are now at root level:
+   ../docs/     - All guides and documentation
+   ../sql/      - Mock data SQL scripts
+```
 
-## 🎉 Success Criteria
+---
 
-You'll know it's working when:
-- ✅ App deploys without errors
-- ✅ You can access the URL
-- ✅ You see "Hello World!" message
-- ✅ Interactive elements work (text input, button)
-
-**Good luck! 🚀**
+**Ready to build! 🚀**
 

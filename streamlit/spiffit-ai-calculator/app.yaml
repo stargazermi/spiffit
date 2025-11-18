@@ -1,0 +1,45 @@
+# Databricks App Configuration
+# AI Calculator with natural language interface
+
+command: ["streamlit", "run", "app.py", "--server.port", "8000", "--server.address", "0.0.0.0"]
+
+# Environment variables
+# ⚠️ TEMPORARY: Token hardcoded for hackathon demo
+# TODO: Fix secret reference syntax after demo
+env:
+  - name: STREAMLIT_SERVER_HEADLESS
+    value: "true"
+  - name: STREAMLIT_BROWSER_GATHER_USAGE_STATS
+    value: "false"
+  - name: STREAMLIT_SERVER_ENABLE_CORS
+    value: "false"
+  
+  # Genie Space IDs (configured from dlk-hackathon workspace)
+  
+  # Sales Performance Space (spg-mocking-bird-sales)
+  - name: GENIE_SALES_SPACE_ID
+    value: "01f0c403c3cf184e9b7f1f6c9ee45905"
+  
+  # Analytics/Winners Space (spg-mocking-bird-analytics)
+  - name: GENIE_ANALYTICS_SPACE_ID
+    value: "01f0c404048613b3b494b1a64a1bca84"
+  
+  # Market Intelligence Space (spg-mocking-bird-market)
+  - name: GENIE_MARKET_SPACE_ID
+    value: "01f0c4043acf19dc936c37fd2a8bced3"
+  
+  # Single space for simple calculator (defaults to sales)
+  - name: GENIE_SPACE_ID
+    value: "01f0c403c3cf184e9b7f1f6c9ee45905"
+  
+  # Databricks Authentication (for Genie access)
+  # ⚠️ TEMPORARY: Hardcoded for hackathon demo only!
+  - name: DATABRICKS_HOST
+    value: "https://dbc-4a93b454-f17b.cloud.databricks.com"
+  - name: DATABRICKS_TOKEN
+    value: "dapi5e40d9eb65d1af6c91866e0a35c4"  # ⚠️ TEMP: PAT token for hackathon
+  
+  # SQL Warehouse ID (for executing queries)
+  - name: SQL_WAREHOUSE_ID
+    value: "0962fa4cf0922125"  # Same warehouse connected to Genie spaces
+
