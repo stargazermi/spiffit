@@ -3,6 +3,13 @@
 
 command: ["streamlit", "run", "app.py", "--server.port", "8000", "--server.address", "0.0.0.0"]
 
+# Resources (secrets)
+resources:
+  - name: databricks-pat
+    secret:
+      scope: spiffit-secrets
+      key: databricks-pat-token
+
 # Environment variables
 env:
   - name: STREAMLIT_SERVER_HEADLESS
@@ -35,5 +42,5 @@ env:
   - name: DATABRICKS_HOST
     value: "https://dbc-4a93b454-f17b.cloud.databricks.com"
   - name: DATABRICKS_TOKEN
-    valueFrom: "spiffit-secrets/databricks-pat-token"
+    valueFrom: databricks-pat
 

@@ -13,6 +13,31 @@ When deploying new changes:
 
 ## Version History
 
+### v1.4.4 - 2024-11-18
+**🔧 Fixed Secret Resource Definition**
+- ✅ Added `resources` section to `app.yaml` to define secret as a resource
+- ✅ Secrets must be registered as resources before referencing in env vars
+- ✅ Changed env var to reference resource name instead of secret directly
+
+**The Correct Format:**
+```yaml
+# Step 1: Define resource
+resources:
+  - name: databricks-pat
+    secret:
+      scope: spiffit-secrets
+      key: databricks-pat-token
+
+# Step 2: Reference resource in env var
+env:
+  - name: DATABRICKS_TOKEN
+    valueFrom: databricks-pat
+```
+
+**Files Updated:**
+- `app.yaml` - Added resources section, simplified env var reference
+- `app.py` - Version → v1.4.4
+
 ### v1.4.3 - 2024-11-18
 **🔧 Critical Fix: app.yaml Secret Syntax**
 - ✅ Fixed `DATABRICKS_TOKEN` secret reference syntax in `app.yaml`

@@ -39,15 +39,24 @@ databricks secrets put-secret spiffit-secrets databricks-pat-token --profile dlk
 # Paste your token, save, and close
 ```
 
-The `app.yaml` is already configured to reference this secret:
+The `app.yaml` is already configured to use this secret:
 ```yaml
-- name: DATABRICKS_TOKEN
-  valueFrom: "spiffit-secrets/databricks-pat-token"
+# Define the secret as a resource
+resources:
+  - name: databricks-pat
+    secret:
+      scope: spiffit-secrets
+      key: databricks-pat-token
+
+# Reference the resource in environment variables
+env:
+  - name: DATABRICKS_TOKEN
+    valueFrom: databricks-pat
 ```
 
 ✅ **Safe to commit - no token in Git!**
 
-**Note:** Use `valueFrom:` (camelCase) with format `"scope/key"`, not `value_from:` with nested object!
+**Note:** Secrets must be defined as resources first, then referenced by resource name in env vars!
 
 ---
 
