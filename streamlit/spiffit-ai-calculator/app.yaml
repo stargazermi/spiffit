@@ -28,8 +28,7 @@ env:
   - name: GENIE_MARKET_SPACE_ID
     value: "01f0c4043acf19dc936c37fd2a8bced3"
   
-  # Voice Activations Space (cross-workspace - data analyst's fine-tuning space)
-  # ⚠️ NOTE: This space is in another workspace, will be migrated to dlk-hackathon later
+  # Voice Activations Space (cross-workspace - data analyst fine-tuning)
   - name: GENIE_VOICE_ACTIVATIONS_SPACE_ID
     value: "01f0c3e4c6751989828598c96ee0debf"
   
@@ -42,7 +41,14 @@ env:
   - name: DATABRICKS_HOST
     value: "https://dbc-4a93b454-f17b.cloud.databricks.com"
   - name: DATABRICKS_TOKEN
-    value: "dapi5e40d9eb65d1af6c91866e0a35c4"  # ⚠️ TEMP: PAT token for hackathon
+    value: "dapi5e40d9eb65d1af6c91866e0a35c4"  # ⚠️ TEMP: PAT token for hackathon (dlk-hackathon workspace)
+  
+  # Cross-Workspace Authentication (for Voice Activations Genie in other workspace)
+  # ⚠️ USER: Add your Voice Activations workspace PAT token below after testing main token
+  - name: DATABRICKS_VOICE_WORKSPACE_HOST
+    value: "https://dbc-40f40c74-254e.cloud.databricks.com"  # Voice Activations workspace
+  - name: DATABRICKS_VOICE_WORKSPACE_TOKEN
+    value: "PLACEHOLDER_ADD_YOUR_VOICE_WORKSPACE_TOKEN_HERE"  # ⚠️ USER: Replace with your actual PAT token
   
   # SQL Warehouse ID (for executing queries)
   - name: SQL_WAREHOUSE_ID
