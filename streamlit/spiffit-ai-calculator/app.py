@@ -31,7 +31,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.0.1-SPIFFIT"  # 🎯 Automated Demo Story + Sidebar Examples!
+APP_VERSION = "v3.1.0-SPIFFIT"  # 🎯 Automated Demo Story + Sidebar Examples!
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
 logger.info("🎸 When a problem comes along... you must Spiff It! 🎸")
@@ -265,15 +265,13 @@ if view_mode == "🎬 Demo":
         # Show spinner while processing
         with st.spinner("🤔 Calculating Voice Activations incentives..."):
             # Run the Voice Incentive calculation
-            voice_prompt = """Return opportunity owner, sum MRR, and group by opportunity owner. Calculate incentive payout based on:
-
-Voice Activations Incentive: (Payout Min. $250 MRR = $300 | $1000+ MRR = $1000)
-• Designed to encourage sellers to drive incremental VOIP sales, including both new logo customers and existing customers adding incremental VOIP MRR
-• Based on Opportunity Level
-• Applies to any NEW Incremental VOIP MRR (Renewals are excluded):
-  - New Logo Customers
-  - Customers without Voice products
-  - Customers with existing Voice products who are adding additional, incremental VOIP lines (this is not a renewal or swap)
+            voice_prompt = """For Voice Opportunities, sum MRR by 18 digit opportunity ID and calculate the incentive payout for that opportunity using the following rules return all applicable columns and rows (exclude opportunities where the order stage = Cancelled): Voice Activations Incentive: (Payout Min. $250 MRR = $300 |$1000+ MRR = $1000)
+• Designed to encourage sellers to drive incremental VOIP sales, including both new logo customers and existing customers adding incremental VOIP MRR.
+• Based on Opportunity Level (added back into qualifications)
+• Applies to any NEW incremental VOIP MRR (Renewals are excluded)
+o New Logo Customers
+o Customers without Voice products
+o Customers with existing Voice products who are adding additional, incremental VOIP lines (this is not a renewal or swap)
 • Incremental VOIP sales must generate new MRR
 • Migrations or upgrades to incremental VOIP services that generate new MRR are included, while renewals or product swaps without revenue gain are excluded
 • Reporting: The Net MRR is specifically separated from Renewal MRR to ensure that only new or incremental VOIP sales are counted, excluding renewals or migrations with no additional revenue gain"""
@@ -977,63 +975,85 @@ elif view_mode == "⚙️ Tech":
     **Why:** Optimized for data queries
     """)
         
-        # Genie Spaces Configuration
+        # Genie Spaces Configuration (Multi-Agent)
         st.markdown("---")
-        st.markdown("## 🧠 Configured Genie Spaces")
+        st.markdown("## 🧠 Multi-Agent Genie Architecture")
+        
+        st.info("ℹ️ **Current Setup:** All 4 agents point to the same Genie space ('Hackathon- SPIFF Analyzer') while maintaining multi-agent architecture for future expansion.")
         
         genie_sales_id = os.getenv("GENIE_SALES_SPACE_ID", "Not configured")
         genie_analytics_id = os.getenv("GENIE_ANALYTICS_SPACE_ID", "Not configured")
         genie_market_id = os.getenv("GENIE_MARKET_SPACE_ID", "Not configured")
+        genie_voice_id = os.getenv("GENIE_VOICE_ACTIVATIONS_SPACE_ID", "Not configured")
         
-        col1, col2, col3 = st.columns(3)
+        col1, col2 = st.columns(2)
         
         with col1:
-            st.markdown("### 📊 Sales Performance")
+            st.markdown("### 📊 Sales Performance Agent")
             if genie_sales_id != "Not configured":
                 st.success(f"✅ Connected")
                 with st.expander("Details"):
                     st.code(f"Space ID: {genie_sales_id}")
                     st.markdown("""
-    **Data:**
-    - Sales performance
-    - AE metrics
-    - Deal pipeline
-    - Quota attainment
+    **Handles:**
+    - Sales performance queries
+    - AE metrics & quotas
+    - Deal pipeline data
     """)
             else:
                 st.error("❌ Not configured")
         
-        with col2:
-            st.markdown("### 🏆 Analytics & Winners")
-            if genie_analytics_id != "Not configured":
-                st.success(f"✅ Connected")
-                with st.expander("Details"):
-                    st.code(f"Space ID: {genie_analytics_id}")
-                    st.markdown("""
-    **Data:**
-    - SPIFF winners
-    - Leaderboards
-    - Historical results
-    - Incentive payouts
-    """)
-            else:
-                st.error("❌ Not configured")
-        
-        with col3:
-            st.markdown("### 🌐 Market Intelligence")
+            st.markdown("### 🌐 Market Intelligence Agent")
             if genie_market_id != "Not configured":
                 st.success(f"✅ Connected")
                 with st.expander("Details"):
                     st.code(f"Space ID: {genie_market_id}")
                     st.markdown("""
-    **Data:**
-    - Competitor SPIFFs
-    - Market trends
-    - Industry benchmarks
-    - Pricing intelligence
+    **Handles:**
+    - Market trend queries
+    - Historical data analysis
+    - Internal benchmarking
     """)
             else:
                 st.error("❌ Not configured")
+        
+        with col2:
+            st.markdown("### 🏆 Analytics & Winners Agent")
+            if genie_analytics_id != "Not configured":
+                st.success(f"✅ Connected")
+                with st.expander("Details"):
+                    st.code(f"Space ID: {genie_analytics_id}")
+                    st.markdown("""
+    **Handles:**
+    - SPIFF winner calculations
+    - Leaderboard queries
+    - Historical payouts
+    """)
+            else:
+                st.error("❌ Not configured")
+        
+            st.markdown("### 📞 Voice Activations Agent")
+            if genie_voice_id != "Not configured":
+                st.success(f"✅ Connected")
+                with st.expander("Details"):
+                    st.code(f"Space ID: {genie_voice_id}")
+                    st.markdown("""
+    **Handles:**
+    - VOIP MRR calculations
+    - Opportunity owner payouts
+    - Incremental sales incentives
+    """)
+            else:
+                st.error("❌ Not configured")
+        
+        st.markdown("---")
+        st.markdown("### 📁 Connected Data")
+        st.markdown("""
+- `hackathon.hackathon_spiffit.voice_opps`
+- `hackathon.hackathon_spiffit.voice_orders`
+                
+**SQL Warehouse:** `0962fa4cf0922125` (shared across all agents)
+""")
         
         # Tech Stack Summary
         st.markdown("---")
@@ -1117,14 +1137,15 @@ elif view_mode == "⚙️ Tech":
         st.json(auth_vars)
         
         # Genie space variables
-        st.markdown("#### 🧠 Genie Spaces")
+        st.markdown("#### 🧠 Genie Spaces (Multi-Agent)")
         genie_vars = {
-            "GENIE_SPACE_ID": os.getenv("GENIE_SPACE_ID") or "Not set",
             "GENIE_SALES_SPACE_ID": os.getenv("GENIE_SALES_SPACE_ID") or "Not set",
             "GENIE_ANALYTICS_SPACE_ID": os.getenv("GENIE_ANALYTICS_SPACE_ID") or "Not set",
             "GENIE_MARKET_SPACE_ID": os.getenv("GENIE_MARKET_SPACE_ID") or "Not set",
+            "GENIE_VOICE_ACTIVATIONS_SPACE_ID": os.getenv("GENIE_VOICE_ACTIVATIONS_SPACE_ID") or "Not set",
         }
         st.json(genie_vars)
+        st.caption("💡 Note: All agents currently point to 'Hackathon- SPIFF Analyzer' (0110c4ae99271d64835d414b8d43ddfb)")
         
         st.markdown("### ✅ Connection Status")
         col1, col2 = st.columns(2)

@@ -14,28 +14,29 @@ env:
   - name: STREAMLIT_SERVER_ENABLE_CORS
     value: "false"
   
-  # Genie Space IDs (configured from dlk-hackathon workspace)
+  # Genie Space IDs - Multi-Agent Architecture
+  # NOTE: All agents currently point to the same Genie space "Hackathon- SPIFF Analyzer"
+  # This maintains the multi-agent design while using one backend space
   
-  # Sales Performance Space (spg-mocking-bird-sales)
+  # Sales Performance Agent
   - name: GENIE_SALES_SPACE_ID
-    value: "01f0c403c3cf184e9b7f1f6c9ee45905"
+    value: "0110c4ae99271d64835d414b8d43ddfb"
   
-  # Analytics/Winners Space (spg-mocking-bird-analytics)
+  # Analytics & Winners Agent
   - name: GENIE_ANALYTICS_SPACE_ID
-    value: "01f0c404048613b3b494b1a64a1bca84"
+    value: "0110c4ae99271d64835d414b8d43ddfb"
   
-  # Market Intelligence Space (spg-mocking-bird-market)
+  # Market Intelligence Agent
   - name: GENIE_MARKET_SPACE_ID
-    value: "01f0c4043acf19dc936c37fd2a8bced3"
+    value: "0110c4ae99271d64835d414b8d43ddfb"
   
-  # Voice Activations Space (moved to dlk-hackathon workspace)
-  # ⚠️ USER: Update with new Genie space ID after migration
+  # Voice Activations Agent
   - name: GENIE_VOICE_ACTIVATIONS_SPACE_ID
-    value: "PLACEHOLDER_UPDATE_AFTER_GENIE_MIGRATION"
+    value: "0110c4ae99271d64835d414b8d43ddfb"
   
-  # Single space for simple calculator (defaults to sales)
+  # Primary Genie Space ID (for backward compatibility)
   - name: GENIE_SPACE_ID
-    value: "01f0c403c3cf184e9b7f1f6c9ee45905"
+    value: "0110c4ae99271d64835d414b8d43ddfb"
   
   # Databricks Authentication (for Genie access)
   # ⚠️ TEMPORARY: Hardcoded for hackathon demo only!
