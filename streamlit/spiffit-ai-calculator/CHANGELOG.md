@@ -4,6 +4,28 @@ All notable changes to the Spiffit application.
 
 ---
 
+## [v2.1.2-SPIFFIT] - 2025-11-18
+### 🔧 Fixed: 'ResultData' object is not callable
+**Why:** SQL execution was failing with "'ResultData' object is not callable" error
+
+**Root Cause:**
+- Databricks SDK `execute_statement()` returns different object types
+- `statement.result` can be a property OR a method depending on the object
+- We were blindly calling `.result()` when sometimes it's a property
+
+**Fixed:**
+- ✅ Check if `result` attribute exists first
+- ✅ Check if `result` is callable (method) or property
+- ✅ Handle both cases gracefully
+- ✅ Fallback to using statement object directly if needed
+- ✅ Added extensive logging to debug SDK object types
+
+**Files Changed:**
+- `ai_helper.py` - Smarter result access logic
+- `app.py` - Updated version to v2.1.2
+
+---
+
 ## [v2.1.1-SPIFFIT] - 2025-11-18
 ### 🔧 Critical Fix: SQL Execution Now Actually Triggers!
 **Why:** SQL execution code wasn't being triggered - query showed but no data
