@@ -11,6 +11,7 @@ import streamlit as st
 import os
 import logging
 import re
+import time
 from datetime import datetime
 from io import StringIO
 import pandas as pd
@@ -34,7 +35,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.7.0-SPIFFIT"  # ⚡ Performance: Cached demo queries (3s instead of 35s!)
+APP_VERSION = "v3.7.1-SPIFFIT"  # 🔧 Hotfix: Added missing 'time' import
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"🎸 Spiffit v{APP_VERSION} - Deployed: {DEPLOYMENT_TIME}")
 
