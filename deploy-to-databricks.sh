@@ -1,11 +1,12 @@
 #!/bin/bash
 # Databricks App Deployment Script
-# Pushes latest code to Git and restarts Databricks App
+# Restarts Databricks App (pulls latest code from Git automatically)
 
 # Configuration
-COMMIT_MESSAGE="${1:-Update app}"
-PROFILE="${2:-dlk-hackathon}"
-APP_NAME="${3:-spiffit-mocking-bird}"
+PROFILE="${1:-dlk-hackathon}"
+APP_NAME="${2:-spiffit-mocking-bird}"
+REPO_ID="${3:-2435542458835487}"
+REPO_BRANCH="${4:-spiffit-dev}"
 
 # Colors
 RED='\033[0;31m'
@@ -18,50 +19,33 @@ NC='\033[0m' # No Color
 echo -e "${CYAN}🚀 Databricks App Deployment Script${NC}"
 echo -e "${CYAN}=====================================${NC}"
 echo ""
-
-# Step 1: Git Status
-echo -e "${GREEN}📊 Checking Git status...${NC}"
-git status --short
+echo -e "${YELLOW}⚠️  Make sure you've pushed your latest changes to GitHub first!${NC}"
 echo ""
 
-read -p "❓ Do you want to commit and push these changes? (y/n): " continue
+read -p "❓ Ready to redeploy the app? (y/n): " continue
 if [ "$continue" != "y" ]; then
     echo -e "${RED}❌ Deployment cancelled${NC}"
     exit 0
 fi
 
-# Step 2: Git Add
-echo -e "\n${GREEN}📦 Staging files...${NC}"
-git add streamlit/spiffit-ai-calculator/
+# Step 1: Pull latest code to Databricks Git Folder
+echo -e "\n${GREEN}📥 Step 1: Updating Databricks Git Folder...${NC}"
+echo -e "   ${CYAN}Repo ID: $REPO_ID${NC}"
+echo -e "   ${CYAN}Branch: $REPO_BRANCH${NC}"
 
-# Step 3: Git Commit
-echo -e "\n${GREEN}💾 Committing changes...${NC}"
-git commit -m "$COMMIT_MESSAGE"
-
-if [ $? -ne 0 ]; then
-    echo -e "${YELLOW}⚠️  No changes to commit or commit failed${NC}"
-    read -p "Continue anyway? (y/n): " skip_push
-    if [ "$skip_push" != "y" ]; then
-        exit 1
-    fi
-fi
-
-# Step 4: Git Push
-echo -e "\n${GREEN}⬆️  Pushing to GitHub...${NC}"
-git push origin main
+# Update repo to latest from GitHub
+echo -e "   ${CYAN}🔄 Pulling latest from GitHub...${NC}"
+databricks repos update "$REPO_ID" --branch "$REPO_BRANCH" --profile "$PROFILE"
 
 if [ $? -ne 0 ]; then
-    echo -e "${RED}❌ Git push failed!${NC}"
+    echo -e "${RED}❌ Failed to update Git Folder!${NC}"
+    echo -e "   ${YELLOW}💡 Verify Repo ID and branch name are correct${NC}"
     exit 1
 fi
 
-echo -e "${GREEN}✅ Successfully pushed to GitHub!${NC}"
+echo -e "${GREEN}✅ Git Folder updated with latest code!${NC}"
 
-# Step 5: Wait for GitHub sync
-echo -e "\n${YELLOW}⏳ Waiting 5 seconds for GitHub to sync...${NC}"
-sleep 5
-
-# Step 6: Get App ID
+# Step 2: Get App ID
 echo -e "\n${GREEN}🔍 Finding Databricks App...${NC}"
 app_list=$(databricks apps list --profile "$PROFILE" --output json 2>&1)
 
@@ -75,7 +59,7 @@ fi
 
 # Parse JSON to find app (using jq if available, otherwise grep)
 if command -v jq &> /dev/null; then
-    app_url=$(echo "$app_list" | jq -r ".apps[] | select(.name == \"$APP_NAME\") | .url")
+    app_url=$(echo "$app_list" | jq -r ".[] | select(.name == \"$APP_NAME\") | .url")
 else
     # Fallback without jq
     app_url=$(echo "$app_list" | grep -A 5 "\"$APP_NAME\"" | grep "url" | cut -d'"' -f4)
@@ -91,28 +75,26 @@ fi
 echo -e "${GREEN}✅ Found app: $APP_NAME${NC}"
 echo -e "   ${CYAN}URL: $app_url${NC}"
 
-# Step 7: Stop the app
-echo -e "\n${GREEN}⏸️  Stopping app...${NC}"
-databricks apps stop "$APP_NAME" --profile "$PROFILE"
+# Step 3: Deploy the app (restart to pick up changes from Git Folder)
+echo -e "\n${GREEN}🔄 Step 3: Deploying app...${NC}"
+echo -e "   ${CYAN}🔄 Restarting app to pick up latest code...${NC}"
+
+databricks apps deploy "$APP_NAME" --profile "$PROFILE"
 
 if [ $? -ne 0 ]; then
-    echo -e "${YELLOW}⚠️  Stop command failed (app might already be stopped)${NC}"
+    echo -e "${YELLOW}❌ Deploy failed! Trying restart instead...${NC}"
+    
+    # Fallback: restart command
+    databricks apps restart "$APP_NAME" --profile "$PROFILE"
+    
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}❌ Restart also failed!${NC}"
+        exit 1
+    fi
 fi
 
-echo -e "${YELLOW}⏳ Waiting 3 seconds...${NC}"
-sleep 3
-
-# Step 8: Start the app
-echo -e "\n${GREEN}▶️  Starting app (this will pull latest code from Git)...${NC}"
-databricks apps start "$APP_NAME" --profile "$PROFILE"
-
-if [ $? -ne 0 ]; then
-    echo -e "${RED}❌ Failed to start app!${NC}"
-    exit 1
-fi
-
-# Step 9: Monitor deployment
-echo -e "\n${YELLOW}⏳ Monitoring deployment (this takes ~2-3 minutes)...${NC}"
+# Step 4: Monitor deployment
+echo -e "\n${YELLOW}⏳ Step 4: Monitoring deployment (this takes ~2-3 minutes)...${NC}"
 echo -e "   ${GRAY}Press Ctrl+C to stop monitoring (app will continue deploying)${NC}"
 echo ""
 

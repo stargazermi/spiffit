@@ -4,26 +4,23 @@ These scripts automate the process of deploying your Streamlit app to Databricks
 
 ## 📋 What They Do
 
-1. **Show Git status** and confirm changes
-2. **Stage and commit** files to Git
-3. **Push to GitHub** (origin/main)
-4. **Wait** for GitHub to sync
-5. **Stop** the Databricks App
-6. **Start** the app (pulls latest code from Git)
-7. **Monitor** deployment until "RUNNING"
+1. **Confirm** you're ready to deploy
+2. **Pull latest code** from GitHub to your Databricks Git Folder (Repos)
+3. **Find** your Databricks App
+4. **Deploy** the app (restart to pick up changes from Git Folder)
+5. **Monitor** deployment until "RUNNING"
+
+**Note:** You handle Git commits/push separately. These scripts only manage the Databricks side.
 
 ## 🪟 Windows (PowerShell)
 
 ### Usage:
 ```powershell
-# Simple usage (uses default commit message)
+# After you've pushed to Git, run:
 .\deploy-to-databricks.ps1
 
-# With custom commit message
-.\deploy-to-databricks.ps1 -CommitMessage "Fix Genie API (v1.3.2)"
-
-# With different profile or app name
-.\deploy-to-databricks.ps1 -CommitMessage "Update" -Profile "my-profile" -AppName "my-app"
+# With different profile, app name, repo ID, or branch
+.\deploy-to-databricks.ps1 -Profile "my-profile" -AppName "my-app" -RepoId "1234567890" -RepoBranch "main"
 ```
 
 ### First Time Setup:
@@ -44,14 +41,11 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 # Make script executable (first time only)
 chmod +x deploy-to-databricks.sh
 
-# Simple usage
+# After you've pushed to Git, run:
 ./deploy-to-databricks.sh
 
-# With custom commit message
-./deploy-to-databricks.sh "Fix Genie API (v1.3.2)"
-
-# With different profile or app name
-./deploy-to-databricks.sh "Update" "my-profile" "my-app"
+# With different profile, app name, repo ID, or branch
+./deploy-to-databricks.sh "my-profile" "my-app" "1234567890" "main"
 ```
 
 ### First Time Setup:
@@ -65,9 +59,10 @@ databricks auth login --profile dlk-hackathon
 ## ⚙️ Configuration
 
 ### Default Values:
-- **Commit Message**: "Update app"
 - **Profile**: `dlk-hackathon`
 - **App Name**: `spiffit-mocking-bird`
+- **Repo ID**: `2435542458835487` (spiffit-dev Git folder)
+- **Repo Branch**: `spiffit-dev`
 
 ### To Change Defaults:
 Edit the script parameters at the top of the file.
@@ -81,29 +76,26 @@ Edit the script parameters at the top of the file.
 🚀 Databricks App Deployment Script
 =====================================
 
-📊 Checking Git status...
-M  streamlit/spiffit-ai-calculator/ai_helper.py
-M  streamlit/spiffit-ai-calculator/app.py
+⚠️  Make sure you've pushed your latest changes to GitHub first!
 
-❓ Do you want to commit and push these changes? (y/n): y
+❓ Ready to redeploy the app? (y/n): y
 
-📦 Staging files...
-💾 Committing changes...
-⬆️  Pushing to GitHub...
-✅ Successfully pushed to GitHub!
+📥 Step 1: Updating Databricks Git Folder...
+   Path: /Shared/spiffit-dev
+✅ Found Git Folder (ID: 2435542458835487)
+   🔄 Pulling latest from GitHub...
+✅ Git Folder updated with latest code!
 
-⏳ Waiting 5 seconds for GitHub to sync...
-
-🔍 Finding Databricks App...
+🔍 Step 2: Finding Databricks App...
 ✅ Found app: spiffit-mocking-bird
    URL: https://spiffit-mocking-bird-1978110925405963.aws.databricksapps.com
 
-⏸️  Stopping app...
-⏳ Waiting 3 seconds...
+🔄 Step 3: Deploying app...
+   🔄 Restarting app to pick up latest code...
 
-▶️  Starting app (this will pull latest code from Git)...
+⏳ Step 4: Monitoring deployment (this takes ~2-3 minutes)...
+   Press Ctrl+C to stop monitoring (app will continue deploying)
 
-⏳ Monitoring deployment (this takes ~2-3 minutes)...
    [1/40] State: STARTING
    [2/40] State: STARTING
    [3/40] State: STARTING
@@ -148,22 +140,6 @@ databricks auth login --profile dlk-hackathon
 
 ---
 
-### "Git push failed"
-**Problem**: Not authenticated with GitHub or conflicts
-
-**Fix**:
-```bash
-# Check if you're signed in
-git remote -v
-
-# Pull latest first if there are conflicts
-git pull origin main
-
-# Then run the script again
-```
-
----
-
 ### "Deployment is taking longer than expected"
 **Problem**: App is still deploying (normal for complex apps)
 
@@ -182,33 +158,45 @@ git pull origin main
 ### Full Workflow (PowerShell):
 ```powershell
 # 1. Make your code changes
-# 2. Run deployment script
-.\deploy-to-databricks.ps1 -CommitMessage "Fix Genie API (v1.3.2)"
 
-# 3. Wait for "App is RUNNING!"
-# 4. Open app URL in browser
-# 5. Verify version in Troubleshooting tab
+# 2. Commit and push to GitHub (you handle this)
+git add .
+git commit -m "Fix Genie API (v1.3.2)"
+git push origin main
+
+# 3. Run deployment script
+.\deploy-to-databricks.ps1
+
+# 4. Wait for "App is RUNNING!"
+# 5. Open app URL in browser
+# 6. Verify version in Troubleshooting tab
 ```
 
 ### Full Workflow (Bash):
 ```bash
 # 1. Make your code changes
-# 2. Run deployment script
-./deploy-to-databricks.sh "Fix Genie API (v1.3.2)"
 
-# 3. Wait for "App is RUNNING!"
-# 4. Open app URL in browser
-# 5. Verify version in Troubleshooting tab
+# 2. Commit and push to GitHub (you handle this)
+git add .
+git commit -m "Fix Genie API (v1.3.2)"
+git push origin main
+
+# 3. Run deployment script
+./deploy-to-databricks.sh
+
+# 4. Wait for "App is RUNNING!"
+# 5. Open app URL in browser
+# 6. Verify version in Troubleshooting tab
 ```
 
 ---
 
 ## 🚨 Important Notes
 
-1. **Script stops the app** - Your app will be briefly unavailable (2-3 minutes)
-2. **Commits are automatic** - Review `git status` before confirming
+1. **Push to GitHub first** - Script pulls from GitHub, so commit/push before running
+2. **App restarts automatically** - Your app will be briefly unavailable (2-3 minutes)
 3. **Can't cancel deployment** - Once started, let it finish or stop manually in UI
-4. **Monitoring is optional** - Press Ctrl+C to stop watching (app continues)
+4. **Monitoring is optional** - Press Ctrl+C to stop watching (app continues deploying)
 
 ---
 
