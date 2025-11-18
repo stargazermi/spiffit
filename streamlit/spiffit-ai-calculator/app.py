@@ -35,7 +35,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.7.2-SPIFFIT"  # 📋 Improved truncation for competitor intel
+APP_VERSION = "v3.7.4-SPIFFIT"  # 🔧 Fixed: Popover instead of modal (no rerun!)
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"🎸 Spiffit v{APP_VERSION} - Deployed: {DEPLOYMENT_TIME}")
 
@@ -282,20 +282,18 @@ def extract_and_display_genie_data(answer_text, key_prefix="data", display_ui=Tr
                     )
                 
                 with col2:
-                    # Copy for email - modal dialog
-                    if st.button("📋 Copy for Email", key=f"copy_email_{key_prefix}", use_container_width=True):
-                        # Use popover for modal-like experience
-                        with st.container():
-                            st.markdown("### 📧 Email-Ready Format")
-                            st.caption("Copy the text below to paste into your email:")
-                            
-                            # Create nicely formatted email content
-                            email_format = f"**{title}**\n\n"
-                            email_format += df.to_markdown(index=False)
-                            
-                            # Display in code block for easy copying
-                            st.code(email_format, language=None)
-                            st.info("💡 Click inside the box above and press Ctrl+A to select all, then Ctrl+C to copy")
+                    # Copy for email - use popover (no rerun needed!)
+                    with st.popover("📋 Copy for Email", use_container_width=True):
+                        st.markdown("### 📧 Email-Ready Format")
+                        st.caption("Copy the text below to paste into your email:")
+                        
+                        # Create nicely formatted email content
+                        email_format = f"**{title}**\n\n"
+                        email_format += df.to_markdown(index=False)
+                        
+                        # Display in code block for easy copying
+                        st.code(email_format, language=None)
+                        st.info("💡 Click inside and press Ctrl+A, then Ctrl+C to copy")
             
             # ⏱️ TIMING: Data extraction complete
             elapsed = time.time() - start_time
