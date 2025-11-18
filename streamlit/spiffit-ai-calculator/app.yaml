@@ -35,7 +35,5 @@ env:
   - name: DATABRICKS_HOST
     value: "https://dbc-4a93b454-f17b.cloud.databricks.com"
   - name: DATABRICKS_TOKEN
-    value_from:
-      secret_scope: spiffit-secrets
-      secret_key: databricks-pat-token
+    valueFrom: "spiffit-secrets/databricks-pat-token"
 

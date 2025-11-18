@@ -13,6 +13,32 @@ When deploying new changes:
 
 ## Version History
 
+### v1.4.3 - 2024-11-18
+**🔧 Critical Fix: app.yaml Secret Syntax**
+- ✅ Fixed `DATABRICKS_TOKEN` secret reference syntax in `app.yaml`
+- ✅ Changed from `value_from:` (incorrect) to `valueFrom:` (correct)
+- ✅ Format: `valueFrom: "scope/key"` instead of nested object
+
+**The Problem:**
+```yaml
+# ❌ WRONG (caused deployment error)
+- name: DATABRICKS_TOKEN
+  value_from:
+    secret_scope: spiffit-secrets
+    secret_key: databricks-pat-token
+```
+
+**The Fix:**
+```yaml
+# ✅ CORRECT
+- name: DATABRICKS_TOKEN
+  valueFrom: "spiffit-secrets/databricks-pat-token"
+```
+
+**Files Updated:**
+- `app.yaml` - Fixed secret reference syntax
+- `app.py` - Version → v1.4.3
+
 ### v1.4.2 - 2024-11-18
 **📜 Added Comprehensive Authentication Logging**
 - ✅ Added detailed logging to `ai_helper.py` showing authentication method used

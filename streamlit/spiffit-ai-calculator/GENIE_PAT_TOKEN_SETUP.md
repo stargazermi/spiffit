@@ -42,12 +42,12 @@ databricks secrets put-secret spiffit-secrets databricks-pat-token --profile dlk
 The `app.yaml` is already configured to reference this secret:
 ```yaml
 - name: DATABRICKS_TOKEN
-  value_from:
-    secret_scope: spiffit-secrets
-    secret_key: databricks-pat-token
+  valueFrom: "spiffit-secrets/databricks-pat-token"
 ```
 
 ✅ **Safe to commit - no token in Git!**
+
+**Note:** Use `valueFrom:` (camelCase) with format `"scope/key"`, not `value_from:` with nested object!
 
 ---
 
