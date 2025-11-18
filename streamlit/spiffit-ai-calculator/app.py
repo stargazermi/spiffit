@@ -34,7 +34,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.3.2-SPIFFIT"  # 🔧 Fixed OAuth/PAT conflict in Databricks Apps!
+APP_VERSION = "v3.3.3-SPIFFIT"  # 🔑 Force PAT auth, ignore OAuth!
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
 logger.info("🎸 When a problem comes along... you must Spiff It! 🎸")
@@ -153,27 +153,14 @@ def extract_and_display_genie_data(answer_text, key_prefix="data", display_ui=Tr
         # Execute query to get raw data
         from databricks.sdk import WorkspaceClient
         
-        # Determine auth method based on environment
-        # 1. If DATABRICKS_CLIENT_ID exists, we're in Databricks Apps (use OAuth)
-        # 2. If DATABRICKS_PROFILE exists, we're running locally (use profile)
-        # 3. Otherwise, use default auth
-        
-        if os.getenv("DATABRICKS_CLIENT_ID"):
-            # Running in Databricks Apps - use OAuth explicitly
-            w = WorkspaceClient(
-                host=os.getenv("DATABRICKS_HOST"),
-                client_id=os.getenv("DATABRICKS_CLIENT_ID"),
-                client_secret=os.getenv("DATABRICKS_CLIENT_SECRET")
-            )
-            logger.info("🔐 Using OAuth authentication (Databricks Apps)")
-        elif os.getenv("DATABRICKS_PROFILE"):
-            # Running locally with profile
-            w = WorkspaceClient(profile=os.getenv("DATABRICKS_PROFILE"))
-            logger.info(f"🔐 Using profile authentication: {os.getenv('DATABRICKS_PROFILE')}")
-        else:
-            # Fall back to default auth
-            w = WorkspaceClient()
-            logger.info("🔐 Using default authentication")
+        # Use PAT token authentication explicitly
+        # This avoids conflicts with auto-injected OAuth credentials in Databricks Apps
+        w = WorkspaceClient(
+            host=os.getenv("DATABRICKS_HOST"),
+            token=os.getenv("DATABRICKS_TOKEN"),
+            auth_type='pat'
+        )
+        logger.info("🔐 Using PAT token authentication (forced)")
         
         warehouse_id = os.getenv("SQL_WAREHOUSE_ID", "0962fa4cf0922125")
         
