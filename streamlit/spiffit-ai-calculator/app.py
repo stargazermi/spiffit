@@ -34,7 +34,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.2.3-SPIFFIT"  # 🔧 Fixed auth conflicts in data extraction!
+APP_VERSION = "v3.3.1-SPIFFIT"  # 📎 Added supporting data CSV download!
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
 logger.info("🎸 When a problem comes along... you must Spiff It! 🎸")
@@ -129,10 +129,16 @@ def format_for_email(answer_text):
     return True, email_text, csv_data, headers, data_rows
 
 
-def extract_and_display_genie_data(answer_text, key_prefix="data"):
+def extract_and_display_genie_data(answer_text, key_prefix="data", display_ui=True):
     """
-    Extract data from Genie response, display as table and chart,
+    Extract data from Genie response, optionally display as table and chart,
     and provide download/copy options
+    
+    Args:
+        answer_text: The Genie response text
+        key_prefix: Unique key prefix for Streamlit widgets
+        display_ui: If True, display table/chart/buttons. If False, only extract data.
+    
     Returns: (has_data: bool, df: pd.DataFrame or None)
     """
     # Try to extract SQL query from answer
@@ -177,12 +183,14 @@ def extract_and_display_genie_data(answer_text, key_prefix="data"):
             df = pd.DataFrame(data_array, columns=columns)
             logger.info(f"✅ Created DataFrame with {len(df)} rows and {len(df.columns)} columns")
             
-            # Display data table
-            st.subheader("📊 Query Results")
-            st.dataframe(df, use_container_width=True)
+            # Only display UI if requested
+            if display_ui:
+                # Display data table
+                st.subheader("📊 Query Results")
+                st.dataframe(df, use_container_width=True)
             
             # Create visualization if we have the right columns
-            if 'Incentive_Payout' in df.columns and 'Total_MRR' in df.columns:
+            if display_ui and 'Incentive_Payout' in df.columns and 'Total_MRR' in df.columns:
                 st.subheader("📈 MRR and Incentive Payout")
                 
                 # Prepare data for chart
@@ -233,38 +241,39 @@ def extract_and_display_genie_data(answer_text, key_prefix="data"):
                 
                 st.plotly_chart(fig, use_container_width=True)
             
-            # Add download buttons
-            col1, col2 = st.columns(2)
-            
-            # Determine filename and title based on whether this is a pivot or detail
-            is_pivot = any('owner' in col.lower() or 'manager' in col.lower() for col in df.columns)
-            if is_pivot:
-                filename = "voice_incentives_by_owner.csv"
-                title = "Voice Activations Incentives - By Owner"
-            else:
-                filename = "voice_incentives_detail.csv"
-                title = "Voice Activations Incentives - Detail"
-            
-            with col1:
-                # Download CSV
-                csv = df.to_csv(index=False)
-                st.download_button(
-                    label="📥 Download CSV",
-                    data=csv,
-                    file_name=filename,
-                    mime="text/csv",
-                    key=f"download_csv_{key_prefix}",
-                    use_container_width=True
-                )
-            
-            with col2:
-                # Copy for email
-                email_format = f"{title}\n{'='*60}\n\n"
-                email_format += df.to_string(index=False)
+            # Add download buttons (only if displaying UI)
+            if display_ui:
+                col1, col2 = st.columns(2)
                 
-                if st.button("📋 Copy for Email", key=f"copy_email_{key_prefix}", use_container_width=True):
-                    st.toast("✅ Copied to clipboard!")
-                    st.code(email_format, language=None)
+                # Determine filename and title based on whether this is a pivot or detail
+                is_pivot = any('owner' in col.lower() or 'manager' in col.lower() for col in df.columns)
+                if is_pivot:
+                    filename = "voice_incentives_by_owner.csv"
+                    title = "Voice Activations Incentives - By Owner"
+                else:
+                    filename = "voice_incentives_detail.csv"
+                    title = "Voice Activations Incentives - Detail"
+                
+                with col1:
+                    # Download CSV
+                    csv = df.to_csv(index=False)
+                    st.download_button(
+                        label="📥 Download CSV",
+                        data=csv,
+                        file_name=filename,
+                        mime="text/csv",
+                        key=f"download_csv_{key_prefix}",
+                        use_container_width=True
+                    )
+                
+                with col2:
+                    # Copy for email
+                    email_format = f"{title}\n{'='*60}\n\n"
+                    email_format += df.to_string(index=False)
+                    
+                    if st.button("📋 Copy for Email", key=f"copy_email_{key_prefix}", use_container_width=True):
+                        st.toast("✅ Copied to clipboard!")
+                        st.code(email_format, language=None)
             
             return True, df
             
@@ -438,46 +447,15 @@ o Customers with existing Voice products who are adding additional, incremental 
                 result = st.session_state.multi_agent.query(voice_prompt)
                 answer = result["answer"]
                 
-                result_msg = {
-                    "role": "assistant",
-                    "content": answer
-                }
-                st.session_state.demo_messages.append(result_msg)
+                # Store detailed data but DON'T display it
+                # Extract data for CSV download only
+                has_detailed_data, detailed_df = extract_and_display_genie_data(answer, key_prefix="voice_detail", display_ui=False)
                 
-                # Display result immediately
-                with st.chat_message("assistant"):
-                    # Try to extract and display data with chart
-                    has_data, df = extract_and_display_genie_data(answer, key_prefix="voice_demo")
-                    
-                    # If no structured data, show text response
-                    if not has_data:
-                        # Filter out SQL queries for clean demo view
-                        clean_answer = re.sub(r'```sql.*?```', '', answer, flags=re.DOTALL)
-                        clean_answer = re.sub(r'\*\*SQL Query:\*\*.*?(?=\n\n|\Z)', '', clean_answer, flags=re.DOTALL)
-                        clean_answer = clean_answer.strip()
-                        st.markdown(clean_answer)
-                        
-                        # Try old format_for_email as fallback
-                        is_copyable, email_format, csv_data, headers, data_rows = format_for_email(clean_answer)
-                        if is_copyable and email_format:
-                            col1, col2 = st.columns([3, 1])
-                            with col1:
-                                with st.expander("📧 Copy for Email", expanded=False):
-                                    st.caption("Click the copy button on the right →")
-                                    st.code(email_format, language=None)
-                            with col2:
-                                st.markdown("####")  # Spacing
-                                st.button("📋 Copy", key=f"copy_auto_1", use_container_width=True)
-                            
-                            if csv_data and headers and data_rows:
-                                st.download_button(
-                                    label="📥 Download CSV",
-                                    data=csv_data,
-                                    file_name="spiff_winners.csv",
-                                    mime="text/csv",
-                                    key=f"download_auto_1",
-                                    use_container_width=True
-                                )
+                # Store detailed data in session state for CSV download
+                if has_detailed_data:
+                    st.session_state.detailed_voice_data = detailed_df
+                
+                # Don't add to messages or display - skip to pivot table
                 st.session_state.demo_auto_displayed += 1
             except Exception as e:
                 error_msg = {
@@ -489,10 +467,10 @@ o Customers with existing Voice products who are adding additional, incremental 
                     st.markdown(error_msg["content"])
                 st.session_state.demo_auto_displayed += 1
         
-        # Step 2: Create pivot table summary by opportunity owner
+        # Step 2: Create pivot table summary by opportunity owner  
         pivot_msg = {
             "role": "assistant",
-            "content": "📊 **Here's the summary by Opportunity Owner for the email:**"
+            "content": "📊 **Here's the summary by Opportunity Owner:**\n\n*This is what you'll send to the compensation team*"
         }
         st.session_state.demo_messages.append(pivot_msg)
         
@@ -523,6 +501,20 @@ Show the results sorted by Total MRR descending."""
                 with st.chat_message("assistant"):
                     # Try to extract and display pivot data with chart
                     has_data, df = extract_and_display_genie_data(answer, key_prefix="voice_pivot")
+                    
+                    # Add supporting data download button if detailed data exists
+                    if hasattr(st.session_state, 'detailed_voice_data'):
+                        st.markdown("---")
+                        st.caption("📎 **Supporting Data** (detailed breakdown by opportunity ID)")
+                        detailed_csv = st.session_state.detailed_voice_data.to_csv(index=False)
+                        st.download_button(
+                            label="📥 Download Supporting Data CSV",
+                            data=detailed_csv,
+                            file_name="voice_incentives_detailed_supporting_data.csv",
+                            mime="text/csv",
+                            key="download_supporting_data",
+                            use_container_width=False
+                        )
                     
                     # If no structured data, show text response
                     if not has_data:
