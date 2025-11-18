@@ -13,6 +13,25 @@ When deploying new changes:
 
 ## Version History
 
+### v1.4.2 - 2024-11-18
+**📜 Added Comprehensive Authentication Logging**
+- ✅ Added detailed logging to `ai_helper.py` showing authentication method used
+- ✅ Logs show which env vars are set (HOST, TOKEN, PROFILE, GENIE_SPACE_ID)
+- ✅ Added real-time log viewer in Troubleshooting tab
+- ✅ Enhanced environment variable display with Auth and Genie sections
+- ✅ Logs capture Genie API calls and errors
+
+**What You'll See:**
+- 🔐 Authentication method being used (PAT Token / CLI Profile / OAuth M2M)
+- 📋 Environment variables status
+- 💬 Genie API call attempts with space ID
+- ❌ Detailed error messages if Genie fails
+
+**Files Updated:**
+- `ai_helper.py` - Added logging to `__init__` and `_ask_genie`
+- `app.py` - Added log capture and viewer in Troubleshooting tab
+- Version → `v1.4.2`
+
 ### v1.4.1 - 2024-11-18
 **🔧 Critical Fix: Async Wait Handling**
 - ✅ Fixed Genie API to properly handle `Wait` object from `start_conversation()`

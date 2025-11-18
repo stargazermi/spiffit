@@ -7,7 +7,10 @@ from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.serving import ChatMessage, ChatMessageRole
 import json
 import os
+import logging
 
+# Configure logging
+logger = logging.getLogger(__name__)
 
 class IncentiveAI:
     """
@@ -33,15 +36,38 @@ class IncentiveAI:
         token = os.getenv("DATABRICKS_TOKEN")
         profile = os.getenv("DATABRICKS_PROFILE")
         
+        # Log authentication debug info
+        logger.info("=" * 60)
+        logger.info("🔐 IncentiveAI Authentication Debug")
+        logger.info("=" * 60)
+        logger.info(f"📋 Environment Variables:")
+        logger.info(f"  DATABRICKS_HOST: {host if host else '❌ NOT SET'}")
+        logger.info(f"  DATABRICKS_TOKEN: {'✅ SET (***' + token[-4:] + ')' if token else '❌ NOT SET'}")
+        logger.info(f"  DATABRICKS_PROFILE: {profile if profile else '❌ NOT SET'}")
+        logger.info(f"  GENIE_SPACE_ID (param): {genie_space_id if genie_space_id else '❌ NOT SET'}")
+        logger.info("")
+        
         if host and token:
             # PAT token authentication (supports Genie)
+            logger.info("✅ Using PAT Token authentication (host + token)")
+            logger.info(f"   Host: {host}")
+            logger.info(f"   Token: ***{token[-4:]}")
             self.workspace = WorkspaceClient(host=host, token=token)
+            self.auth_method = "PAT Token"
         elif profile:
             # Local development with CLI profile
+            logger.info(f"✅ Using CLI Profile authentication: {profile}")
             self.workspace = WorkspaceClient(profile=profile)
+            self.auth_method = f"CLI Profile ({profile})"
         else:
             # Databricks Apps - automatic OAuth (doesn't support Genie)
+            logger.warning("⚠️ Using automatic OAuth M2M authentication")
+            logger.warning("   This authentication method does NOT support Genie!")
             self.workspace = WorkspaceClient()
+            self.auth_method = "OAuth M2M (default)"
+        
+        logger.info(f"🔑 Auth Method: {self.auth_method}")
+        logger.info("=" * 60)
         
         self.genie_space_id = genie_space_id
         self.model_name = model_name or "databricks-meta-llama-3-1-70b-instruct"
@@ -72,7 +98,15 @@ class IncentiveAI:
         
         API flow: start_conversation returns Wait object, call .result() to get conversation
         """
+        logger.info("=" * 60)
+        logger.info("💬 Calling Genie API")
+        logger.info("=" * 60)
+        logger.info(f"Space ID: {self.genie_space_id}")
+        logger.info(f"Question: {question}")
+        logger.info(f"Auth Method: {self.auth_method}")
+        
         try:
+            logger.info("⏳ Initiating conversation (async)...")
             # Start conversation WITH the question (creates conversation + first message)
             # This returns a Wait object - need to call .result()
             wait_obj = self.workspace.genie.start_conversation(
@@ -80,8 +114,10 @@ class IncentiveAI:
                 content=question  # Initial message
             )
             
+            logger.info("⏳ Waiting for Genie response...")
             # Wait for Genie to process the query
             conversation = wait_obj.result()
+            logger.info("✅ Received response from Genie")
             
             if not conversation:
                 return "Failed to start Genie conversation (no response)"
@@ -115,6 +151,13 @@ class IncentiveAI:
         except Exception as e:
             import traceback
             error_detail = traceback.format_exc()
+            
+            logger.error("❌ Genie API call failed!")
+            logger.error(f"Error: {str(e)}")
+            logger.error(f"Space ID: {self.genie_space_id}")
+            logger.error(f"Auth Method: {self.auth_method}")
+            logger.error(f"Full traceback:\n{error_detail}")
+            
             return f"""Genie API Error:
 {str(e)}
 
@@ -125,11 +168,13 @@ class IncentiveAI:
 
 **Debug info:**
 Space ID: {self.genie_space_id}
+Auth Method: {self.auth_method}
 Error details: {error_detail}
 
 **To fix:** 
 - Check GENIE_PERMISSIONS_FIX.md for permission setup
 - Verify space ID is correct in Troubleshooting tab
+- Check app logs for authentication details
 """
     
     def _format_genie_attachments(self, attachments):

@@ -9,15 +9,30 @@ load_dotenv()
 
 import streamlit as st
 import os
+import logging
 from datetime import datetime
+from io import StringIO
 from ai_helper import IncentiveAI
 from query_parser import QueryParser
 from multi_tool_agent import MultiToolAgent
 from web_search_tool import CompetitorSearchTool
 
+# Configure logging to capture in memory
+log_stream = StringIO()
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(log_stream),  # Capture to string
+        logging.StreamHandler()  # Also print to console
+    ]
+)
+logger = logging.getLogger(__name__)
+
 # Version and deployment tracking
-APP_VERSION = "v1.4.1"  # Fixed async Wait.result() for Genie API
+APP_VERSION = "v1.4.2"  # Added authentication logging
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
 
 # Page configuration
 st.set_page_config(
@@ -340,15 +355,25 @@ with tab3:
     st.markdown("---")
     
     st.markdown("### 🔍 Environment Variables")
-    env_vars = {
-        "GENIE_SPACE_ID": os.getenv("GENIE_SPACE_ID"),
-        "GENIE_SALES_SPACE_ID": os.getenv("GENIE_SALES_SPACE_ID"),
-        "GENIE_ANALYTICS_SPACE_ID": os.getenv("GENIE_ANALYTICS_SPACE_ID"),
-        "GENIE_MARKET_SPACE_ID": os.getenv("GENIE_MARKET_SPACE_ID"),
-        "DATABRICKS_PROFILE": os.getenv("DATABRICKS_PROFILE"),
-    }
     
-    st.json(env_vars)
+    # Authentication variables
+    st.markdown("#### 🔐 Authentication")
+    auth_vars = {
+        "DATABRICKS_HOST": os.getenv("DATABRICKS_HOST") or "Not set",
+        "DATABRICKS_TOKEN": "***" + os.getenv("DATABRICKS_TOKEN", "")[-4:] if os.getenv("DATABRICKS_TOKEN") else "Not set",
+        "DATABRICKS_PROFILE": os.getenv("DATABRICKS_PROFILE") or "Not set",
+    }
+    st.json(auth_vars)
+    
+    # Genie space variables
+    st.markdown("#### 🧠 Genie Spaces")
+    genie_vars = {
+        "GENIE_SPACE_ID": os.getenv("GENIE_SPACE_ID") or "Not set",
+        "GENIE_SALES_SPACE_ID": os.getenv("GENIE_SALES_SPACE_ID") or "Not set",
+        "GENIE_ANALYTICS_SPACE_ID": os.getenv("GENIE_ANALYTICS_SPACE_ID") or "Not set",
+        "GENIE_MARKET_SPACE_ID": os.getenv("GENIE_MARKET_SPACE_ID") or "Not set",
+    }
+    st.json(genie_vars)
     
     st.markdown("### ✅ Connection Status")
     col1, col2 = st.columns(2)
@@ -414,6 +439,8 @@ with tab3:
     test_col1, test_col2 = st.columns([1, 3])
     with test_col1:
         test_genie = st.button("Test Genie Query", key="test_genie_btn", use_container_width=True)
+    with test_col2:
+        refresh_logs = st.button("🔄 Refresh Logs", key="refresh_logs_btn", use_container_width=True)
     
     # Display results in a persistent container
     test_results = st.container()
@@ -423,6 +450,7 @@ with tab3:
             if st.session_state.ai.genie_space_id:
                 with st.spinner("Testing Genie connection..."):
                     try:
+                        logger.info("User clicked 'Test Genie Query' button")
                         response = st.session_state.ai.ask_question("Show me the top performers")
                         st.success("✅ Genie query successful!")
                         st.markdown("**📄 Response:**")
@@ -431,6 +459,29 @@ with tab3:
                         st.error(f"❌ Genie query failed: {str(e)}")
             else:
                 st.warning("⚠️ Genie Space ID not configured. Cannot test Genie query.")
+    
+    st.markdown("---")
+    st.markdown("### 📜 Authentication & API Logs")
+    st.caption("Shows authentication method and Genie API calls")
+    
+    # Get current logs
+    log_contents = log_stream.getvalue()
+    
+    if log_contents:
+        # Show last 100 lines
+        log_lines = log_contents.split('\n')
+        recent_logs = '\n'.join(log_lines[-100:])
+        
+        st.text_area(
+            "Recent Logs",
+            value=recent_logs,
+            height=400,
+            key="log_viewer"
+        )
+        
+        st.caption(f"📊 Showing last 100 log entries (Total: {len(log_lines)} lines)")
+    else:
+        st.info("No logs yet. Click 'Test Genie Query' or interact with the app to generate logs.")
 
 # Footer
 st.markdown("---")
