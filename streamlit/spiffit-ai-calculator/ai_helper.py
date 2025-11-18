@@ -258,6 +258,58 @@ Error details: {error_detail}
 - Check app logs for authentication details
 """
     
+    def _format_query_results_as_table(self, result_data, max_rows=10):
+        """Format query results as a markdown table (without column names)"""
+        return self._format_query_results_as_table_with_headers(result_data, None, max_rows)
+    
+    def _format_query_results_as_table_with_headers(self, result_data, column_names=None, max_rows=10):
+        """Format query results as a markdown table with optional column names"""
+        if not result_data or len(result_data) == 0:
+            return "**Query Results:** No data found"
+        
+        # Determine number of columns from first row
+        first_row = result_data[0]
+        if isinstance(first_row, (list, tuple)):
+            num_cols = len(first_row)
+        else:
+            # Single value
+            num_cols = 1
+            result_data = [[row] for row in result_data]
+        
+        # Build markdown table
+        lines = [f"**Query Results:** {len(result_data)} rows found\n"]
+        
+        # Table header
+        if column_names and len(column_names) == num_cols:
+            # Use provided column names
+            header = "| " + " | ".join(column_names) + " |"
+            separator = "|" + "|".join(["-------" for _ in range(num_cols)]) + "|"
+        elif num_cols == 1:
+            header = "| Value |"
+            separator = "|-------|"
+        else:
+            # Generic column names
+            headers = [f"Column {i+1}" for i in range(num_cols)]
+            header = "| " + " | ".join(headers) + " |"
+            separator = "|" + "|".join(["-------" for _ in range(num_cols)]) + "|"
+        
+        lines.append(header)
+        lines.append(separator)
+        
+        # Table rows
+        for row in result_data[:max_rows]:
+            if isinstance(row, (list, tuple)):
+                row_str = "| " + " | ".join([str(val) for val in row]) + " |"
+            else:
+                row_str = f"| {str(row)} |"
+            lines.append(row_str)
+        
+        # Show truncation message if needed
+        if len(result_data) > max_rows:
+            lines.append(f"\n*...and {len(result_data) - max_rows} more rows*")
+        
+        return "\n".join(lines)
+    
     def _format_genie_attachments(self, attachments):
         """Format Genie query results from attachments"""
         try:
@@ -289,14 +341,9 @@ Error details: {error_detail}
                         # Check if result_data has actual data
                         if isinstance(result_data, (list, tuple)) and len(result_data) > 0:
                             has_valid_result = True
-                            results.append(f"**Query Results:** {len(result_data)} rows found")
-                            # Format first few rows nicely
-                            results.append("```")
-                            for row in result_data[:10]:  # Show up to 10 rows
-                                results.append(str(row))
-                            if len(result_data) > 10:
-                                results.append(f"... and {len(result_data) - 10} more rows")
-                            results.append("```")
+                            # Format as markdown table
+                            table_output = self._format_query_results_as_table(result_data)
+                            results.append(table_output)
                             logger.info(f"✅ Extracted {len(result_data)} result rows")
                         elif isinstance(result_data, str) and result_data.strip():
                             has_valid_result = True
@@ -388,28 +435,21 @@ Error details: {error_detail}
             if hasattr(result, 'data_array') and result.data_array:
                 logger.info(f"📊 Got {len(result.data_array)} rows")
                 
-                # Format results nicely
-                formatted_lines = [f"**Query Results:** {len(result.data_array)} rows found", "```"]
-                
-                # Show column headers if available
+                # Extract column headers if available
+                column_names = None
                 if hasattr(result, 'manifest') and hasattr(result.manifest, 'schema') and result.manifest.schema.columns:
-                    headers = [col.name for col in result.manifest.schema.columns]
-                    formatted_lines.append(" | ".join(headers))
-                    formatted_lines.append("-" * (len(" | ".join(headers))))
+                    column_names = [col.name for col in result.manifest.schema.columns]
                 
-                # Show up to 10 rows
-                for i, row in enumerate(result.data_array[:10]):
+                # Convert to list of lists for table formatting
+                data_rows = []
+                for row in result.data_array:
                     if hasattr(row, 'values'):
-                        formatted_lines.append(" | ".join([str(v) for v in row.values]))
+                        data_rows.append(list(row.values))
                     else:
-                        formatted_lines.append(str(row))
+                        data_rows.append([row])
                 
-                if len(result.data_array) > 10:
-                    formatted_lines.append(f"\n... and {len(result.data_array) - 10} more rows")
-                
-                formatted_lines.append("```")
-                
-                return "\n".join(formatted_lines)
+                # Format as markdown table with column names
+                return self._format_query_results_as_table_with_headers(data_rows, column_names)
             
             elif hasattr(result, 'chunk_index'):
                 # Chunked results - fetch them
