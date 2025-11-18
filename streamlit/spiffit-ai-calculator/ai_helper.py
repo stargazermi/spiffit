@@ -62,33 +62,45 @@ class IncentiveAI:
     def _ask_genie(self, question: str):
         """
         Query using Genie space
+        
+        Correct flow:
+        1. Start a conversation (gets conversation_id)
+        2. Create message in that conversation
+        3. Get result
         """
         try:
-            # Method 1: Try using create_message API (recommended for SDK)
-            try:
-                message = self.workspace.genie.create_message(
-                    space_id=self.genie_space_id,
-                    content=question
-                )
-                
-                if message and hasattr(message, 'content'):
-                    return message.content
-                elif message and hasattr(message, 'text'):
-                    return message.text
+            # Step 1: Start a conversation to get a conversation_id
+            conversation = self.workspace.genie.start_conversation(
+                space_id=self.genie_space_id
+            )
+            
+            if not conversation or not hasattr(conversation, 'conversation_id'):
+                return f"Failed to start Genie conversation. Response: {str(conversation)}"
+            
+            conversation_id = conversation.conversation_id
+            
+            # Step 2: Send the message to the conversation
+            message_response = self.workspace.genie.create_message(
+                space_id=self.genie_space_id,
+                conversation_id=conversation_id,
+                content=question
+            )
+            
+            # Step 3: Extract the response
+            # The response might be in different formats depending on SDK version
+            if message_response:
+                # Try different response formats
+                if hasattr(message_response, 'content'):
+                    return message_response.content
+                elif hasattr(message_response, 'text'):
+                    return message_response.text
+                elif hasattr(message_response, 'attachments') and message_response.attachments:
+                    # Genie may return data as attachments
+                    return self._format_genie_attachments(message_response.attachments)
                 else:
-                    return f"Received response but format unexpected: {str(message)}"
-                    
-            except AttributeError:
-                # Method 2: Fallback to start_conversation if create_message doesn't exist
-                conversation = self.workspace.genie.start_conversation(
-                    space_id=self.genie_space_id,
-                    content=question
-                )
-                
-                if conversation and hasattr(conversation, 'messages') and conversation.messages:
-                    return conversation.messages[-1].content
-                else:
-                    return "No response from Genie"
+                    return f"Received response from Genie but format unexpected: {str(message_response)}"
+            else:
+                return "No response from Genie"
                 
         except Exception as e:
             import traceback
@@ -105,8 +117,23 @@ class IncentiveAI:
 Space ID: {self.genie_space_id}
 Error details: {error_detail}
 
-**To fix:** Try running this app locally first with DATABRICKS_PROFILE=dlk-hackathon
+**To fix:** 
+- Check GENIE_PERMISSIONS_FIX.md for permission setup
+- Verify space ID is correct in Troubleshooting tab
 """
+    
+    def _format_genie_attachments(self, attachments):
+        """Format Genie query results from attachments"""
+        try:
+            results = []
+            for attachment in attachments:
+                if hasattr(attachment, 'query') and hasattr(attachment.query, 'query'):
+                    results.append(f"**Query:** {attachment.query.query}")
+                if hasattr(attachment, 'query') and hasattr(attachment.query, 'result'):
+                    results.append(f"**Result:** {attachment.query.result}")
+            return "\n\n".join(results) if results else str(attachments)
+        except Exception as e:
+            return f"Genie returned data but couldn't format: {str(attachments)}"
     
     def _ask_foundation_model(self, question: str, calculator_results: dict = None):
         """

@@ -86,31 +86,89 @@ class MultiToolAgent:
         
         # Step 2: Execute tool calls
         tool_results = {}
-        for tool_name in routing_decision["tools"]:
-            if tool_name == "genie_sales" and self.genie_sales:
-                tool_results["genie_sales"] = self.genie_sales.ask_question(user_question)
-            elif tool_name == "genie_analytics" and self.genie_analytics:
-                tool_results["genie_analytics"] = self.genie_analytics.ask_question(user_question)
-            elif tool_name == "genie_market" and self.genie_market:
-                tool_results["genie_market"] = self.genie_market.ask_question(user_question)
-            elif tool_name == "web_search":
-                tool_results["web_search"] = self.web_search.search_competitor_programs(user_question)
+        tool_errors = {}
         
-        # Step 3: Synthesize results
-        if len(tool_results) > 1:
-            # Multiple tools - need synthesis
+        for tool_name in routing_decision["tools"]:
+            try:
+                if tool_name == "genie_sales" and self.genie_sales:
+                    result = self.genie_sales.ask_question(user_question)
+                    # Check if result is an error message
+                    if "Genie error:" in result or "Unable to get space" in result:
+                        tool_errors["genie_sales"] = result
+                    else:
+                        tool_results["genie_sales"] = result
+                        
+                elif tool_name == "genie_analytics" and self.genie_analytics:
+                    result = self.genie_analytics.ask_question(user_question)
+                    if "Genie error:" in result or "Unable to get space" in result:
+                        tool_errors["genie_analytics"] = result
+                    else:
+                        tool_results["genie_analytics"] = result
+                        
+                elif tool_name == "genie_market" and self.genie_market:
+                    result = self.genie_market.ask_question(user_question)
+                    if "Genie error:" in result or "Unable to get space" in result:
+                        tool_errors["genie_market"] = result
+                    else:
+                        tool_results["genie_market"] = result
+                        
+                elif tool_name == "web_search":
+                    tool_results["web_search"] = self.web_search.search_competitor_programs(user_question)
+                    
+            except Exception as e:
+                tool_errors[tool_name] = f"Error executing {tool_name}: {str(e)}"
+        
+        # Step 3: Handle errors and synthesize results
+        if tool_errors and not tool_results:
+            # All tools failed
+            error_summary = "\n\n".join([f"**{tool}:** {error}" for tool, error in tool_errors.items()])
+            final_answer = f"""⚠️ **All data sources encountered errors:**
+
+{error_summary}
+
+**Possible causes:**
+- Genie spaces may need permissions (see GENIE_PERMISSIONS_FIX.md)
+- Network connectivity issues
+- Data sources temporarily unavailable
+
+💡 **Tip:** Check the 🔧 Troubleshooting tab for connection status and environment variables.
+"""
+            tools_used = list(tool_errors.keys())
+            
+        elif tool_errors:
+            # Some tools failed, some succeeded
+            warning = "\n".join([f"⚠️ {tool} failed: {error[:100]}..." for tool, error in tool_errors.items()])
+            
+            if len(tool_results) > 1:
+                final_answer = self._synthesize_results(user_question, tool_results, routing_decision["reasoning"])
+                final_answer = f"{warning}\n\n---\n\n{final_answer}\n\n_Note: Answer based on available sources only._"
+            else:
+                final_answer = list(tool_results.values())[0]
+                final_answer = f"{warning}\n\n---\n\n{final_answer}\n\n_Note: Some data sources were unavailable._"
+            
+            tools_used = list(tool_results.keys())
+            
+        elif len(tool_results) > 1:
+            # Multiple tools succeeded - synthesize
             final_answer = self._synthesize_results(user_question, tool_results, routing_decision["reasoning"])
+            tools_used = list(tool_results.keys())
+            
         elif len(tool_results) == 1:
-            # Single tool - return directly
+            # Single tool succeeded
             final_answer = list(tool_results.values())[0]
+            tools_used = list(tool_results.keys())
+            
         else:
+            # No tools configured or called
             final_answer = "No tools were able to answer this question."
+            tools_used = []
         
         return {
             "answer": final_answer,
-            "tools_used": list(tool_results.keys()),
+            "tools_used": tools_used,
             "routing_reasoning": routing_decision["reasoning"],
-            "raw_results": tool_results
+            "raw_results": tool_results,
+            "errors": tool_errors if tool_errors else None
         }
     
     def _route_query(self, question: str) -> Dict:

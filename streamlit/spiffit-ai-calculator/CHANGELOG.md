@@ -13,6 +13,18 @@ When deploying new changes:
 
 ## Version History
 
+### v1.3.1 - 2024-11-17
+**🔧 Critical Fix: Genie API**
+- ✅ Fixed Genie conversation flow (start_conversation → create_message)
+- ✅ Proper two-step API call with conversation_id
+- ✅ Added attachment parsing for Genie query results
+- ✅ Better error messages with troubleshooting guidance
+
+**Technical Details:**
+- Genie API requires: `start_conversation()` first to get `conversation_id`
+- Then: `create_message(conversation_id=...)` to send queries
+- Result may be in `content`, `text`, or `attachments`
+
 ### v1.3.0 - 2024-11-17
 **🎉 Major Feature: Competitor Intelligence**
 - ✅ Added **Multi-Tool Agent** with smart routing

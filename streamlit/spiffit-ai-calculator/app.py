@@ -16,7 +16,7 @@ from multi_tool_agent import MultiToolAgent
 from web_search_tool import CompetitorSearchTool
 
 # Version and deployment tracking
-APP_VERSION = "v1.3.0"  # Update this with each deployment (added competitor intel)
+APP_VERSION = "v1.3.1"  # Update this with each deployment (fixed Genie API)
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 # Page configuration
@@ -292,10 +292,19 @@ I can help you research competitor SPIFF programs and compare them with our inte
                         st.markdown(f"**Routing Decision:** {result['routing_reasoning']}")
                         st.markdown(f"**Tools Used:** {', '.join(result['tools_used'])}")
                         
+                        # Show errors if any
+                        if result.get("errors"):
+                            st.warning("**⚠️ Some tools encountered errors:**")
+                            for tool_name, error in result["errors"].items():
+                                st.error(f"**{tool_name}:** {error[:200]}...")
+                            st.info("💡 See GENIE_PERMISSIONS_FIX.md for troubleshooting Genie access issues")
+                        
                         # Show raw results from each tool
-                        for tool_name, tool_result in result.get("raw_results", {}).items():
-                            st.markdown(f"**{tool_name.upper()}:**")
-                            st.text(tool_result[:500] + "..." if len(tool_result) > 500 else tool_result)
+                        if result.get("raw_results"):
+                            st.markdown("**📊 Raw Results:**")
+                            for tool_name, tool_result in result["raw_results"].items():
+                                st.markdown(f"**{tool_name.upper()}:**")
+                                st.text(tool_result[:500] + "..." if len(tool_result) > 500 else tool_result)
                     
                     # Save response with metadata
                     st.session_state.competitor_messages.append({
