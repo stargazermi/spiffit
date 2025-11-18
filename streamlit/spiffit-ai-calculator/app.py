@@ -34,10 +34,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.3.4-SPIFFIT"  # 🔧 Fixed result.manifest AttributeError!
+APP_VERSION = "v3.4.0-SPIFFIT"  # 🧹 Cleaned up verbose logging!
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
-logger.info("🎸 When a problem comes along... you must Spiff It! 🎸")
+logger.info(f"🎸 Spiffit v{APP_VERSION} - Deployed: {DEPLOYMENT_TIME}")
 
 # Page configuration
 st.set_page_config(
@@ -147,7 +146,6 @@ def extract_and_display_genie_data(answer_text, key_prefix="data", display_ui=Tr
         return False, None
     
     sql_query = sql_match.group(1).strip()
-    logger.info(f"📊 Extracted SQL query from Genie response")
     
     try:
         # Execute query to get raw data
@@ -160,7 +158,6 @@ def extract_and_display_genie_data(answer_text, key_prefix="data", display_ui=Tr
             token=os.getenv("DATABRICKS_TOKEN"),
             auth_type='pat'
         )
-        logger.info("🔐 Using PAT token authentication (forced)")
         
         warehouse_id = os.getenv("SQL_WAREHOUSE_ID", "0962fa4cf0922125")
         
@@ -181,22 +178,19 @@ def extract_and_display_genie_data(answer_text, key_prefix="data", display_ui=Tr
             if hasattr(statement, 'manifest') and hasattr(statement.manifest, 'schema'):
                 if hasattr(statement.manifest.schema, 'columns'):
                     columns = [col.name for col in statement.manifest.schema.columns]
-                    logger.info(f"✅ Got columns from statement.manifest.schema")
             
             # Try: statement.result.manifest.schema.columns
             if not columns and hasattr(statement.result, 'manifest'):
                 if hasattr(statement.result.manifest, 'schema') and hasattr(statement.result.manifest.schema, 'columns'):
                     columns = [col.name for col in statement.result.manifest.schema.columns]
-                    logger.info(f"✅ Got columns from statement.result.manifest.schema")
             
             # Fallback: generate generic column names
             if not columns:
                 columns = [f"Column_{i}" for i in range(len(data_array[0]) if data_array else 0)]
-                logger.warning(f"⚠️ Using generic column names")
+                logger.warning("Using generic column names - schema not found")
             
             # Create DataFrame
             df = pd.DataFrame(data_array, columns=columns)
-            logger.info(f"✅ Created DataFrame with {len(df)} rows and {len(df.columns)} columns")
             
             # Only display UI if requested
             if display_ui:
@@ -1443,7 +1437,6 @@ elif view_mode == "⚙️ Tech":
                 if st.session_state.ai.genie_space_id:
                     with st.spinner("Testing Genie connection..."):
                         try:
-                            logger.info("User clicked 'Test Genie Query' button")
                             response = st.session_state.ai.ask_question("Show me the top performers")
                             st.success("✅ Genie query successful!")
                             st.markdown("**📄 Response:**")

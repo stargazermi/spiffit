@@ -43,56 +43,16 @@ class IncentiveAI:
         token = alt_workspace_token or os.getenv("DATABRICKS_TOKEN")
         profile = os.getenv("DATABRICKS_PROFILE")
         
-        # Log authentication debug info
-        logger.info("=" * 60)
-        logger.info("🔐 IncentiveAI Authentication Debug")
-        logger.info("=" * 60)
-        logger.info(f"📋 Environment Variables:")
-        
-        # Show workspace connection details
-        if alt_workspace_host or alt_workspace_token:
-            logger.info(f"  🔄 ALTERNATE WORKSPACE (Cross-workspace access):")
-            logger.info(f"     Host: {alt_workspace_host if alt_workspace_host else '❌ NOT SET'}")
-            logger.info(f"     Token: {'✅ SET (***' + alt_workspace_token[-4:] + ')' if alt_workspace_token else '❌ NOT SET'}")
-            logger.info(f"  📍 Main workspace settings (overridden):")
-            logger.info(f"     Host: {os.getenv('DATABRICKS_HOST')}")
-            logger.info(f"     Token: ***{os.getenv('DATABRICKS_TOKEN')[-4:] if os.getenv('DATABRICKS_TOKEN') else 'NOT SET'}")
-        else:
-            logger.info(f"  DATABRICKS_HOST: {host if host else '❌ NOT SET'}")
-            logger.info(f"  DATABRICKS_TOKEN: {'✅ SET (***' + token[-4:] + ')' if token else '❌ NOT SET'}")
-        
-        logger.info(f"  DATABRICKS_PROFILE: {profile if profile else '❌ NOT SET'}")
-        logger.info(f"  GENIE_SPACE_ID (param): {genie_space_id if genie_space_id else '❌ NOT SET'}")
-        logger.info("")
-        
+        # Initialize Databricks client with appropriate authentication
         if host and token:
-            # PAT token authentication (supports Genie)
-            if alt_workspace_host or alt_workspace_token:
-                logger.info("✅ Using ALTERNATE Workspace authentication (cross-workspace)")
-                logger.info(f"   Alternate Host: {host}")
-                logger.info(f"   Alternate Token: ***{token[-4:]}")
-                self.auth_method = f"PAT Token (Cross-Workspace: {host})"
-            else:
-                logger.info("✅ Using PAT Token authentication (host + token)")
-                logger.info(f"   Host: {host}")
-                logger.info(f"   Token: ***{token[-4:]}")
-                self.auth_method = "PAT Token"
-            # Explicitly specify auth_type to override automatic OAuth M2M
             self.workspace = WorkspaceClient(host=host, token=token, auth_type='pat')
+            self.auth_method = "PAT Token"
         elif profile:
-            # Local development with CLI profile
-            logger.info(f"✅ Using CLI Profile authentication: {profile}")
             self.workspace = WorkspaceClient(profile=profile)
-            self.auth_method = f"CLI Profile ({profile})"
+            self.auth_method = f"CLI Profile"
         else:
-            # Databricks Apps - automatic OAuth (doesn't support Genie)
-            logger.warning("⚠️ Using automatic OAuth M2M authentication")
-            logger.warning("   This authentication method does NOT support Genie!")
             self.workspace = WorkspaceClient()
-            self.auth_method = "OAuth M2M (default)"
-        
-        logger.info(f"🔑 Auth Method: {self.auth_method}")
-        logger.info("=" * 60)
+            self.auth_method = "OAuth"
         
         self.genie_space_id = genie_space_id
         self.model_name = model_name or "databricks-meta-llama-3-1-70b-instruct"
@@ -123,92 +83,53 @@ class IncentiveAI:
         
         API flow: start_conversation returns Wait object, call .result() to get conversation
         """
-        logger.info("=" * 60)
-        logger.info("💬 Calling Genie API")
-        logger.info("=" * 60)
-        logger.info(f"Space ID: {self.genie_space_id}")
-        logger.info(f"Question: {question}")
-        logger.info(f"Auth Method: {self.auth_method}")
-        
         try:
-            logger.info("⏳ Initiating conversation (async)...")
-            # Start conversation WITH the question (creates conversation + first message)
-            # This returns a Wait object - need to call .result()
+            # Start conversation and wait for response
             wait_obj = self.workspace.genie.start_conversation(
                 space_id=self.genie_space_id,
-                content=question  # Initial message
+                content=question
             )
-            
-            logger.info("⏳ Waiting for Genie response...")
-            # Wait for Genie to process the query
             conversation = wait_obj.result()
-            logger.info("✅ Received response from Genie")
-            logger.info(f"📦 Response type: {type(conversation)}")
-            logger.info(f"📦 Response has messages: {hasattr(conversation, 'messages')}")
-            logger.info(f"📦 Response has attachments: {hasattr(conversation, 'attachments')}")
-            logger.info(f"📦 Response has content: {hasattr(conversation, 'content')}")
-            logger.info(f"📦 Response has text: {hasattr(conversation, 'text')}")
             
             if not conversation:
                 return "Failed to start Genie conversation (no response)"
             
-            # CRITICAL: Check if this is a GenieMessage (no messages array)
-            # In this case, the response IS the message, and data is in attachments!
+            # Check if this is a GenieMessage (no messages array)
             if not hasattr(conversation, 'messages'):
-                logger.info("📨 Response is a GenieMessage (no messages array)")
-                logger.info("📨 Looking for data in attachments...")
-                
                 # For GenieMessage, attachments contain the actual query results
                 if hasattr(conversation, 'attachments') and conversation.attachments:
-                    logger.info(f"📎 Found {len(conversation.attachments)} attachments")
                     return self._format_genie_attachments(conversation.attachments)
                 
-                # Fallback to content (but this is likely the question echoed back)
+                # Fallback to content
                 elif hasattr(conversation, 'content') and conversation.content:
                     content = str(conversation.content)
-                    logger.warning(f"⚠️ No attachments found, using content (might be question echo)")
-                    logger.info(f"📄 Content: {content[:100]}...")
-                    
                     if content.strip() == question.strip():
-                        return f"⚠️ Genie returned the question without data. This might mean:\n- No data in the Genie space tables\n- SQL warehouse is stopped\n- Query returned no results"
-                    
+                        return f"⚠️ Genie returned the question without data. Check:\n- Data in Genie space tables\n- SQL warehouse is running\n- Query returned results"
                     return content
                 
                 elif hasattr(conversation, 'text') and conversation.text:
                     return str(conversation.text)
                 
                 else:
-                    logger.error("❌ GenieMessage has no attachments, content, or text!")
-                    return f"Genie returned a response but it's empty. Response attributes: {[a for a in dir(conversation) if not a.startswith('_')]}"
+                    logger.error("GenieMessage has no attachments, content, or text")
+                    return "Genie returned an empty response"
             
             # Original logic for Conversation objects with messages array
             elif hasattr(conversation, 'messages') and conversation.messages:
-                logger.info(f"📨 Found {len(conversation.messages)} messages")
-                
-                # CRITICAL: Filter out user messages, only get assistant (Genie) messages
+                # Filter out user messages, only get assistant (Genie) messages
                 assistant_messages = [msg for msg in conversation.messages if hasattr(msg, 'role') and msg.role == 'ASSISTANT']
-                user_messages = [msg for msg in conversation.messages if hasattr(msg, 'role') and msg.role == 'USER']
-                
-                logger.info(f"📨 User messages: {len(user_messages)}, Assistant messages: {len(assistant_messages)}")
                 
                 # Get the last ASSISTANT message (Genie's actual response)
                 if assistant_messages:
                     last_message = assistant_messages[-1]
-                    logger.info(f"📨 Using last assistant message")
                 else:
                     # Fallback: use last message regardless
                     last_message = conversation.messages[-1]
-                    logger.info(f"📨 No assistant messages found, using last message (might be user message!)")
                 
-                logger.info(f"📨 Message role: {getattr(last_message, 'role', 'UNKNOWN')}")
-                logger.info(f"📨 Message has content: {hasattr(last_message, 'content')}")
-                logger.info(f"📨 Message has text: {hasattr(last_message, 'text')}")
-                logger.info(f"📨 Message has attachments: {hasattr(last_message, 'attachments')}")
                 
                 # Try to extract response
                 if hasattr(last_message, 'content') and last_message.content:
                     content = str(last_message.content)
-                    logger.info(f"✅ Extracted content ({len(content)} chars): {content[:100]}...")
                     
                     # Double-check it's not just the question echoed back
                     if content.strip() == question.strip():
@@ -222,11 +143,9 @@ class IncentiveAI:
                     
                 elif hasattr(last_message, 'text') and last_message.text:
                     text = str(last_message.text)
-                    logger.info(f"✅ Extracted text ({len(text)} chars): {text[:100]}...")
                     return text
                     
                 elif hasattr(last_message, 'attachments') and last_message.attachments:
-                    logger.info(f"📎 Processing {len(last_message.attachments)} attachments")
                     return self._format_genie_attachments(last_message.attachments)
                     
                 else:
@@ -234,16 +153,13 @@ class IncentiveAI:
                     return f"Message format unexpected: {str(last_message)[:200]}"
             
             elif hasattr(conversation, 'content') and conversation.content:
-                logger.info(f"✅ Extracted conversation content")
                 return conversation.content
             
             elif hasattr(conversation, 'text') and conversation.text:
-                logger.info(f"✅ Extracted conversation text")
                 return conversation.text
             
             elif hasattr(conversation, 'attachments') and conversation.attachments:
                 # Genie may return query results as attachments
-                logger.info(f"📎 Processing conversation attachments")
                 return self._format_genie_attachments(conversation.attachments)
             
             else:
@@ -335,30 +251,23 @@ Error details: {error_detail}
     def _format_genie_attachments(self, attachments):
         """Format Genie query results from attachments"""
         try:
-            logger.info(f"📎 Formatting {len(attachments)} attachments")
             results = []
             
             for i, attachment in enumerate(attachments):
-                logger.info(f"📎 Attachment {i+1} type: {type(attachment)}")
-                logger.info(f"📎 Attachment {i+1} attributes: {dir(attachment)}")
                 
                 # Try different ways to extract data
                 if hasattr(attachment, 'query'):
                     query_obj = attachment.query
-                    logger.info(f"📊 Found query object: {type(query_obj)}")
                     
                     sql_query = None
                     if hasattr(query_obj, 'query'):
                         sql_query = query_obj.query
                         results.append(f"**SQL Query:**\n```sql\n{sql_query}\n```")
-                        logger.info(f"✅ Extracted SQL query")
                     
                     # Check if query has results embedded
                     has_valid_result = False
                     if hasattr(query_obj, 'result'):
                         result_data = query_obj.result
-                        logger.info(f"📊 Query result type: {type(result_data)}")
-                        logger.info(f"📊 Query result value: {str(result_data)[:200]}...")
                         
                         # Check if result_data has actual data
                         if isinstance(result_data, (list, tuple)) and len(result_data) > 0:
@@ -366,21 +275,17 @@ Error details: {error_detail}
                             # Format as markdown table
                             table_output = self._format_query_results_as_table(result_data)
                             results.append(table_output)
-                            logger.info(f"✅ Extracted {len(result_data)} result rows")
                         elif isinstance(result_data, str) and result_data.strip():
                             has_valid_result = True
                             results.append(f"**Result:**\n```\n{result_data}\n```")
-                            logger.info(f"✅ Extracted string result")
                         else:
                             logger.warning(f"⚠️ Result is empty or invalid: {type(result_data)} = {result_data}")
                     else:
                         logger.warning("⚠️ Query object has no 'result' attribute")
-                        logger.info(f"📊 Query object attributes: {[a for a in dir(query_obj) if not a.startswith('_')]}")
                     
                     # If no valid result from Genie, execute SQL ourselves
                     if not has_valid_result and sql_query and hasattr(self, 'workspace'):
                         logger.warning("⚠️ No valid results from Genie - executing SQL query ourselves")
-                        logger.info("🔄 Executing SQL query to get results...")
                         executed_results = self._execute_sql_query(sql_query)
                         if executed_results:
                             results.append(executed_results)
@@ -390,16 +295,13 @@ Error details: {error_detail}
                 # Check for text content
                 if hasattr(attachment, 'text') and attachment.text:
                     results.append(f"**Text:** {attachment.text}")
-                    logger.info(f"✅ Extracted attachment text")
                 
                 # Check for content
                 if hasattr(attachment, 'content') and attachment.content:
                     results.append(f"**Content:** {attachment.content}")
-                    logger.info(f"✅ Extracted attachment content")
             
             if results:
                 formatted = "\n\n".join(results)
-                logger.info(f"✅ Successfully formatted attachments ({len(formatted)} chars)")
                 return formatted
             else:
                 logger.warning(f"⚠️ No data extracted from attachments, returning raw")
@@ -417,8 +319,6 @@ Error details: {error_detail}
             # Get warehouse ID from environment (same warehouse Genie uses)
             warehouse_id = os.getenv("SQL_WAREHOUSE_ID", "0962fa4cf0922125")
             
-            logger.info(f"🔄 Executing SQL on warehouse: {warehouse_id}")
-            logger.info(f"📝 Query: {sql_query[:100]}...")
             
             # Execute SQL statement
             statement = self.workspace.statement_execution.execute_statement(
@@ -427,27 +327,21 @@ Error details: {error_detail}
                 wait_timeout="30s"
             )
             
-            logger.info(f"✅ Statement executed, type: {type(statement)}")
-            logger.info(f"📦 Statement attributes: {[a for a in dir(statement) if not a.startswith('_')][:20]}")
             
             # Get result - it might be a property or method
             try:
                 if hasattr(statement, 'result'):
                     if callable(statement.result):
                         result = statement.result()  # It's a method
-                        logger.info(f"✅ Got result via method call")
                     else:
                         result = statement.result  # It's a property
-                        logger.info(f"✅ Got result via property access")
                 else:
                     # statement itself might be the result
                     result = statement
-                    logger.info(f"✅ Statement itself is the result")
             except Exception as e:
                 logger.error(f"❌ Error accessing result: {str(e)}")
                 # Try to use statement directly
                 result = statement
-                logger.info(f"✅ Falling back to using statement object directly")
             
             if not result:
                 logger.warning("⚠️ No result object returned")
@@ -455,7 +349,6 @@ Error details: {error_detail}
             
             # Check if we got data back
             if hasattr(result, 'data_array') and result.data_array:
-                logger.info(f"📊 Got {len(result.data_array)} rows")
                 
                 # Extract column headers if available
                 column_names = None
@@ -475,12 +368,10 @@ Error details: {error_detail}
             
             elif hasattr(result, 'chunk_index'):
                 # Chunked results - fetch them
-                logger.info("📦 Results are chunked, fetching...")
                 return "**Query Results:** Results available but in chunked format (not yet implemented)"
             
             else:
                 logger.warning("⚠️ Result object has no data_array")
-                logger.info(f"Result attributes: {dir(result)}")
                 return None
                 
         except Exception as e:
