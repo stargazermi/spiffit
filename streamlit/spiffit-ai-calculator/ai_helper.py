@@ -358,10 +358,27 @@ Error details: {error_detail}
                 wait_timeout="30s"
             )
             
-            logger.info(f"✅ Statement executed, waiting for results...")
+            logger.info(f"✅ Statement executed, type: {type(statement)}")
+            logger.info(f"📦 Statement attributes: {[a for a in dir(statement) if not a.startswith('_')][:20]}")
             
-            # Wait for completion (synchronous for simplicity)
-            result = statement.result()
+            # Get result - it might be a property or method
+            try:
+                if hasattr(statement, 'result'):
+                    if callable(statement.result):
+                        result = statement.result()  # It's a method
+                        logger.info(f"✅ Got result via method call")
+                    else:
+                        result = statement.result  # It's a property
+                        logger.info(f"✅ Got result via property access")
+                else:
+                    # statement itself might be the result
+                    result = statement
+                    logger.info(f"✅ Statement itself is the result")
+            except Exception as e:
+                logger.error(f"❌ Error accessing result: {str(e)}")
+                # Try to use statement directly
+                result = statement
+                logger.info(f"✅ Falling back to using statement object directly")
             
             if not result:
                 logger.warning("⚠️ No result object returned")

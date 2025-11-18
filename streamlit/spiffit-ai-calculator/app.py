@@ -30,7 +30,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v2.1.1-SPIFFIT"  # 🎸 Fixed SQL execution trigger + better error handling
+APP_VERSION = "v2.1.2-SPIFFIT"  # 🎸 Fixed 'ResultData not callable' error
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
 logger.info("🎸 When a problem comes along... you must Spiff It! 🎸")
