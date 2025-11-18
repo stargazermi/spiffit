@@ -34,7 +34,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.5.0-SPIFFIT"  # ⏱️ Added performance timing logs!
+APP_VERSION = "v3.5.1-SPIFFIT"  # 🎯 Fixed pivot message timing!
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"🎸 Spiffit v{APP_VERSION} - Deployed: {DEPLOYMENT_TIME}")
 
@@ -485,20 +485,9 @@ o Customers with existing Voice products who are adding additional, incremental 
                     st.markdown(error_msg["content"])
                 st.session_state.demo_auto_displayed += 1
         
-        # Step 2: Create pivot table summary by opportunity owner  
-        pivot_msg = {
-            "role": "assistant",
-            "content": "📊 **Here's the summary by Opportunity Owner:**\n\n*This is what you'll send to the compensation team*"
-        }
-        st.session_state.demo_messages.append(pivot_msg)
-        
-        # Display pivot message
-        with st.chat_message("assistant"):
-            st.markdown(pivot_msg["content"])
-        st.session_state.demo_auto_displayed += 1
-        
-        with st.spinner("🤔 Creating summary by Opportunity Owner..."):
-            try:
+        # Step 2: Create pivot table summary by opportunity owner
+        try:
+            with st.spinner("🤔 Creating summary by Opportunity Owner..."):
                 # Query for pivot table grouped by opportunity owner
                 pivot_prompt = """Create a pivot table from the Voice Opportunities data that:
 - Groups by Opportunity Owner
@@ -509,48 +498,61 @@ Show the results sorted by Total MRR descending."""
                 result = st.session_state.multi_agent.query(pivot_prompt)
                 answer = result["answer"]
                 
+                # Store the result message
                 result_msg = {
                     "role": "assistant",
                     "content": answer
                 }
                 st.session_state.demo_messages.append(result_msg)
+            
+            # NOW display the message and data together (after spinner completes)
+            pivot_msg = {
+                "role": "assistant",
+                "content": "📊 **Here's the summary by Opportunity Owner:**\n\n*This is what you'll send to the compensation team*"
+            }
+            st.session_state.demo_messages.append(pivot_msg)
+            
+            with st.chat_message("assistant"):
+                # Display the message
+                st.markdown(pivot_msg["content"])
                 
-                # Display result immediately
-                with st.chat_message("assistant"):
-                    # Try to extract and display pivot data with chart
-                    has_data, df = extract_and_display_genie_data(answer, key_prefix="voice_pivot")
-                    
-                    # Add supporting data download button if detailed data exists
-                    if hasattr(st.session_state, 'detailed_voice_data'):
-                        st.markdown("---")
-                        st.caption("📎 **Supporting Data** (detailed breakdown by opportunity ID)")
-                        detailed_csv = st.session_state.detailed_voice_data.to_csv(index=False)
-                        st.download_button(
-                            label="📥 Download Supporting Data CSV",
-                            data=detailed_csv,
-                            file_name="voice_incentives_detailed_supporting_data.csv",
-                            mime="text/csv",
-                            key="download_supporting_data",
-                            use_container_width=False
-                        )
-                    
-                    # If no structured data, show text response
-                    if not has_data:
-                        # Filter out SQL queries for clean demo view
-                        clean_answer = re.sub(r'```sql.*?```', '', answer, flags=re.DOTALL)
-                        clean_answer = re.sub(r'\*\*SQL Query:\*\*.*?(?=\n\n|\Z)', '', clean_answer, flags=re.DOTALL)
-                        clean_answer = clean_answer.strip()
-                        st.markdown(clean_answer)
-                st.session_state.demo_auto_displayed += 1
-            except Exception as e:
-                error_msg = {
-                    "role": "assistant",
-                    "content": f"⚠️ Pivot data loading... (Error: {str(e)})"
-                }
-                st.session_state.demo_messages.append(error_msg)
-                with st.chat_message("assistant"):
-                    st.markdown(error_msg["content"])
-                st.session_state.demo_auto_displayed += 1
+                # Then immediately display the data
+                # Try to extract and display pivot data with chart
+                has_data, df = extract_and_display_genie_data(answer, key_prefix="voice_pivot")
+                
+                # Add supporting data download button if detailed data exists
+                if hasattr(st.session_state, 'detailed_voice_data'):
+                    st.markdown("---")
+                    st.caption("📎 **Supporting Data** (detailed breakdown by opportunity ID)")
+                    detailed_csv = st.session_state.detailed_voice_data.to_csv(index=False)
+                    st.download_button(
+                        label="📥 Download Supporting Data CSV",
+                        data=detailed_csv,
+                        file_name="voice_incentives_detailed_supporting_data.csv",
+                        mime="text/csv",
+                        key="download_supporting_data",
+                        use_container_width=False
+                    )
+                
+                # If no structured data, show text response
+                if not has_data:
+                    # Filter out SQL queries for clean demo view
+                    clean_answer = re.sub(r'```sql.*?```', '', answer, flags=re.DOTALL)
+                    clean_answer = re.sub(r'\*\*SQL Query:\*\*.*?(?=\n\n|\Z)', '', clean_answer, flags=re.DOTALL)
+                    clean_answer = clean_answer.strip()
+                    st.markdown(clean_answer)
+            
+            st.session_state.demo_auto_displayed += 1
+            
+        except Exception as e:
+            error_msg = {
+                "role": "assistant",
+                "content": f"⚠️ Pivot data loading... (Error: {str(e)})"
+            }
+            st.session_state.demo_messages.append(error_msg)
+            with st.chat_message("assistant"):
+                st.markdown(error_msg["content"])
+            st.session_state.demo_auto_displayed += 1
         
         # Step 3: Follow up with "Next month's play" - show this immediately too!
         followup_msg = {
