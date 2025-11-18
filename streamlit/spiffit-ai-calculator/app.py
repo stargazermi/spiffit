@@ -31,7 +31,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v2.6.0-SPIFFIT"  # 🤖 18 Orchestrator Models (GPT-5.1, Claude 4.5, Llama 4!)
+APP_VERSION = "v2.7.0-SPIFFIT"  # 📞 Cross-Workspace Genie (Voice Activations)
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
 logger.info("🎸 When a problem comes along... you must Spiff It! 🎸")
@@ -166,6 +166,7 @@ def init_ai():
         genie_sales_id=os.getenv("GENIE_SALES_SPACE_ID"),
         genie_analytics_id=os.getenv("GENIE_ANALYTICS_SPACE_ID"),
         genie_market_id=os.getenv("GENIE_MARKET_SPACE_ID"),
+        genie_voice_activations_id=os.getenv("GENIE_VOICE_ACTIVATIONS_SPACE_ID"),
         orchestrator_model="databricks-gpt-5-1"  # Use GPT-5.1 from serving endpoints
     )
     
@@ -222,7 +223,7 @@ with st.sidebar:
     st.session_state.ai.model_name = model_choice
     
     st.caption("🧠 **Multi-Agent Always Active:**")
-    st.caption("✅ 3 Genie Spaces  \n✅ Web Search  \n✅ Smart Routing")
+    st.caption("✅ 4 Genie Spaces (1 cross-workspace)  \n✅ Web Search  \n✅ Smart Routing")
     
     st.markdown("---")
     st.header("🎸 Spiff It Examples")
@@ -263,6 +264,24 @@ with st.sidebar:
         st.session_state.chat_input_from_button = "Who won the recent SPIFF competitions?"
     if st.button("🌐 Market Genie", use_container_width=True, key="test_market"):
         st.session_state.chat_input_from_button = "What market intelligence data do we have?"
+    
+    st.markdown("**📞 Voice Activations (Cross-Workspace):**")
+    st.caption("⚠️ Testing data analyst's fine-tuned Genie")
+    if st.button("🎤 Voice Incentive Calc", use_container_width=True, key="test_voice"):
+        # Formatted prompt for Voice Activations incentive calculation
+        voice_prompt = """Return opportunity owner, sum MRR, and group by opportunity owner. Calculate incentive payout based on:
+
+Voice Activations Incentive: (Payout Min. $250 MRR = $300 | $1000+ MRR = $1000)
+• Designed to encourage sellers to drive incremental VOIP sales, including both new logo customers and existing customers adding incremental VOIP MRR
+• Based on Opportunity Level
+• Applies to any NEW Incremental VOIP MRR (Renewals are excluded):
+  - New Logo Customers
+  - Customers without Voice products
+  - Customers with existing Voice products who are adding additional, incremental VOIP lines (this is not a renewal or swap)
+• Incremental VOIP sales must generate new MRR
+• Migrations or upgrades to incremental VOIP services that generate new MRR are included, while renewals or product swaps without revenue gain are excluded
+• Reporting: The Net MRR is specifically separated from Renewal MRR to ensure that only new or incremental VOIP sales are counted, excluding renewals or migrations with no additional revenue gain"""
+        st.session_state.chat_input_from_button = voice_prompt
 
 # Tab 1: Chat (Clean Demo View)
 with tab1:
@@ -398,13 +417,15 @@ with tab2:
             "content": """👋 **Welcome to Spiffit Multi-Agent!**
             
 I can intelligently route your questions across:
-- 🏢 **3 Genie Spaces** (Sales, Analytics, Market)
+- 🏢 **4 Genie Spaces** (Sales, Analytics, Market, Voice Activations*)
 - 🌐 **Web Search** for competitor intel
 - 🤖 **Foundation Models** for synthesis
 
 **Try the examples in the sidebar →** or ask anything!
 
 💡 **I'll show you which agents I use for each query.**
+
+_*Voice Activations is in another workspace (data analyst fine-tuning)_
 """
         })
     
@@ -493,6 +514,8 @@ I can intelligently route your questions across:
                     genie_calls.append("Analytics")
                 if "genie_market" in result.get("tools_used", []):
                     genie_calls.append("Market")
+                if "genie_voice_activations" in result.get("tools_used", []):
+                    genie_calls.append("Voice Activations*")
                 
                 # Show which Genies were used
                 if genie_calls:

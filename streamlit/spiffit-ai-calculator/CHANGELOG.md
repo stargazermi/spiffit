@@ -4,6 +4,70 @@ All notable changes to the Spiffit application.
 
 ---
 
+## [v2.7.0-SPIFFIT] - 2025-11-18
+### 📞 Cross-Workspace Genie Support (Voice Activations)
+**Why:** Data analyst is fine-tuning a Voice Activations incentive calculator in another workspace. Need to test it before migrating to hackathon workspace.
+
+**Added:**
+- ✅ **4th Genie Space** - Voice Activations (cross-workspace access!)
+  - Space ID: `01f0c3e4c6751989828598c96ee0debf`
+  - Located in different workspace (being fine-tuned by data analyst)
+  - Will be migrated to dlk-hackathon workspace later
+- ✅ **New Test Button** - "🎤 Voice Incentive Calc"
+  - Sidebar section: "📞 Voice Activations (Cross-Workspace)"
+  - Sends detailed prompt about VOIP MRR calculations
+  - Includes full Voice Activations Incentive rules
+- ✅ **Updated Multi-Agent Routing**
+  - Added Voice Activations to tool routing logic
+  - Routes VOIP/MRR/incentive questions to new Genie
+  - Shows "Voice Activations*" in Genies Called list
+- ✅ **Environment Variable**: `GENIE_VOICE_ACTIVATIONS_SPACE_ID`
+  - Added to `app.yaml` for deployment
+  - Documented as cross-workspace in comments
+
+**Voice Incentive Calculation Prompt:**
+```
+Return opportunity owner, sum MRR, and group by opportunity owner.
+Calculate incentive payout based on:
+
+Voice Activations Incentive: (Payout Min. $250 MRR = $300 | $1000+ MRR = $1000)
+• Designed to encourage incremental VOIP sales
+• Based on Opportunity Level
+• Applies to NEW Incremental VOIP MRR only (Renewals excluded)
+• Includes: New Logo, Customers without Voice, Incremental VOIP lines
+• Excludes: Renewals, swaps without revenue gain
+```
+
+**How It Works:**
+1. User clicks "🎤 Voice Incentive Calc" button
+2. App sends formatted prompt to Voice Activations Genie (in other workspace)
+3. Genie calculates payouts based on complex rules
+4. Results shown in clean demo format
+
+**Technical Details:**
+- Uses same authentication (PAT token works across workspaces)
+- Added `genie_voice_activations_id` parameter to `MultiToolAgent`
+- Tool description: "Voice Activations incentive calculations - VOIP MRR, opportunity owner payouts"
+- Updated routing prompt to include Voice Activations keywords
+- Sidebar updated: "4 Genie Spaces (1 cross-workspace)"
+
+**Benefits:**
+- 🧪 **Test before migration** - Validate data analyst's work
+- 🔄 **Seamless access** - No special setup needed
+- 📊 **Complex calculations** - Handles nuanced VOIP incentive rules
+- 🎯 **Demo ready** - Show cross-workspace capabilities!
+
+**Files Modified:**
+- `app.py` - Added button, updated init, sidebar captions
+- `app.yaml` - Added `GENIE_VOICE_ACTIVATIONS_SPACE_ID`
+- `multi_tool_agent.py` - Added 4th Genie space support
+- `CHANGELOG.md` - This entry
+
+**Demo Talk Track:**
+> "We even support **cross-workspace Genie access**! Our data analyst is fine-tuning a Voice Activations incentive calculator in another workspace, and we can test it seamlessly from here. This shows how flexible our multi-agent architecture is!"
+
+---
+
 ## [v2.6.0-SPIFFIT] - 2025-11-18
 ### 🤖 Expanded Orchestrator Model Options
 **Why:** The hardcoded list had only 4 models (some didn't exist), but workspace has 21 serving endpoints!
