@@ -121,13 +121,44 @@ class IncentiveAI:
             logger.info("✅ Received response from Genie")
             logger.info(f"📦 Response type: {type(conversation)}")
             logger.info(f"📦 Response has messages: {hasattr(conversation, 'messages')}")
+            logger.info(f"📦 Response has attachments: {hasattr(conversation, 'attachments')}")
+            logger.info(f"📦 Response has content: {hasattr(conversation, 'content')}")
+            logger.info(f"📦 Response has text: {hasattr(conversation, 'text')}")
             
             if not conversation:
                 return "Failed to start Genie conversation (no response)"
             
-            # Extract the response from conversation
-            # The conversation object may have different attributes depending on the response
-            if hasattr(conversation, 'messages') and conversation.messages:
+            # CRITICAL: Check if this is a GenieMessage (no messages array)
+            # In this case, the response IS the message, and data is in attachments!
+            if not hasattr(conversation, 'messages'):
+                logger.info("📨 Response is a GenieMessage (no messages array)")
+                logger.info("📨 Looking for data in attachments...")
+                
+                # For GenieMessage, attachments contain the actual query results
+                if hasattr(conversation, 'attachments') and conversation.attachments:
+                    logger.info(f"📎 Found {len(conversation.attachments)} attachments")
+                    return self._format_genie_attachments(conversation.attachments)
+                
+                # Fallback to content (but this is likely the question echoed back)
+                elif hasattr(conversation, 'content') and conversation.content:
+                    content = str(conversation.content)
+                    logger.warning(f"⚠️ No attachments found, using content (might be question echo)")
+                    logger.info(f"📄 Content: {content[:100]}...")
+                    
+                    if content.strip() == question.strip():
+                        return f"⚠️ Genie returned the question without data. This might mean:\n- No data in the Genie space tables\n- SQL warehouse is stopped\n- Query returned no results"
+                    
+                    return content
+                
+                elif hasattr(conversation, 'text') and conversation.text:
+                    return str(conversation.text)
+                
+                else:
+                    logger.error("❌ GenieMessage has no attachments, content, or text!")
+                    return f"Genie returned a response but it's empty. Response attributes: {[a for a in dir(conversation) if not a.startswith('_')]}"
+            
+            # Original logic for Conversation objects with messages array
+            elif hasattr(conversation, 'messages') and conversation.messages:
                 logger.info(f"📨 Found {len(conversation.messages)} messages")
                 
                 # CRITICAL: Filter out user messages, only get assistant (Genie) messages

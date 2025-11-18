@@ -30,7 +30,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v2.0.2-DEMO"  # CRITICAL FIX: Extract ASSISTANT messages, not USER
+APP_VERSION = "v2.0.3-DEMO"  # REAL FIX: Handle GenieMessage (no messages array), extract from attachments
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
 
