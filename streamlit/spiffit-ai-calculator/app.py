@@ -31,7 +31,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v2.7.0-SPIFFIT"  # 📞 Cross-Workspace Genie (Voice Activations)
+APP_VERSION = "v2.7.1-SPIFFIT"  # 🔐 Separate PAT Token for Cross-Workspace Auth
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
 logger.info("🎸 When a problem comes along... you must Spiff It! 🎸")

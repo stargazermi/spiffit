@@ -19,7 +19,7 @@ class IncentiveAI:
     Handles natural language queries using Databricks LLMs
     """
     
-    def __init__(self, genie_space_id: str = None, model_name: str = None):
+    def __init__(self, genie_space_id: str = None, model_name: str = None, alt_workspace_token: str = None):
         """
         Initialize AI helper
         
@@ -27,15 +27,17 @@ class IncentiveAI:
             genie_space_id: Optional Genie space ID
             model_name: Optional Foundation Model name 
                        (e.g., 'databricks-meta-llama-3-1-70b-instruct')
+            alt_workspace_token: Optional PAT token for cross-workspace Genie access
         """
         # Initialize Databricks client
         # Priority:
-        # 1. PAT token (DATABRICKS_HOST + DATABRICKS_TOKEN) - for Genie access
-        # 2. CLI profile (DATABRICKS_PROFILE) - for local development
-        # 3. Automatic OAuth - for Databricks Apps (no Genie support)
+        # 1. Alternate workspace token (for cross-workspace Genie spaces)
+        # 2. PAT token (DATABRICKS_HOST + DATABRICKS_TOKEN) - for Genie access
+        # 3. CLI profile (DATABRICKS_PROFILE) - for local development
+        # 4. Automatic OAuth - for Databricks Apps (no Genie support)
         
         host = os.getenv("DATABRICKS_HOST")
-        token = os.getenv("DATABRICKS_TOKEN")
+        token = alt_workspace_token or os.getenv("DATABRICKS_TOKEN")  # Use alt token if provided
         profile = os.getenv("DATABRICKS_PROFILE")
         
         # Log authentication debug info
@@ -44,19 +46,29 @@ class IncentiveAI:
         logger.info("=" * 60)
         logger.info(f"📋 Environment Variables:")
         logger.info(f"  DATABRICKS_HOST: {host if host else '❌ NOT SET'}")
-        logger.info(f"  DATABRICKS_TOKEN: {'✅ SET (***' + token[-4:] + ')' if token else '❌ NOT SET'}")
+        if alt_workspace_token:
+            logger.info(f"  🔄 ALT_WORKSPACE_TOKEN: ✅ SET (***{alt_workspace_token[-4:]}) - Cross-workspace auth!")
+            logger.info(f"  DATABRICKS_TOKEN: (overridden by alt token)")
+        else:
+            logger.info(f"  DATABRICKS_TOKEN: {'✅ SET (***' + token[-4:] + ')' if token else '❌ NOT SET'}")
         logger.info(f"  DATABRICKS_PROFILE: {profile if profile else '❌ NOT SET'}")
         logger.info(f"  GENIE_SPACE_ID (param): {genie_space_id if genie_space_id else '❌ NOT SET'}")
         logger.info("")
         
         if host and token:
             # PAT token authentication (supports Genie)
-            logger.info("✅ Using PAT Token authentication (host + token)")
-            logger.info(f"   Host: {host}")
-            logger.info(f"   Token: ***{token[-4:]}")
+            if alt_workspace_token:
+                logger.info("✅ Using ALTERNATE PAT Token authentication (cross-workspace)")
+                logger.info(f"   Host: {host}")
+                logger.info(f"   Alt Token: ***{token[-4:]}")
+                self.auth_method = "PAT Token (Cross-Workspace)"
+            else:
+                logger.info("✅ Using PAT Token authentication (host + token)")
+                logger.info(f"   Host: {host}")
+                logger.info(f"   Token: ***{token[-4:]}")
+                self.auth_method = "PAT Token"
             # Explicitly specify auth_type to override automatic OAuth M2M
             self.workspace = WorkspaceClient(host=host, token=token, auth_type='pat')
-            self.auth_method = "PAT Token"
         elif profile:
             # Local development with CLI profile
             logger.info(f"✅ Using CLI Profile authentication: {profile}")

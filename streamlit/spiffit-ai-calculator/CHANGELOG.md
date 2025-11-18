@@ -4,6 +4,79 @@ All notable changes to the Spiffit application.
 
 ---
 
+## [v2.7.1-SPIFFIT] - 2025-11-18
+### 🔐 Separate PAT Token for Cross-Workspace Authentication
+**Why:** Voice Activations Genie is in another workspace. PAT tokens are workspace-specific, so the main dlk-hackathon PAT can't access it.
+
+**Problem Encountered:**
+```
+❌ You need "Can View" permission to perform this action
+```
+Even though user had "Can Edit" permissions in the Genie UI, the PAT token from dlk-hackathon workspace couldn't access Genies in the other workspace.
+
+**Solution:**
+- ✅ **Separate PAT token support** for cross-workspace Genie access
+- ✅ **New environment variable:** `DATABRICKS_VOICE_WORKSPACE_TOKEN`
+- ✅ **Automatic token selection:** Voice Activations uses alternate token, other Genies use main token
+- ✅ **Enhanced logging:** Shows which token is being used (cross-workspace vs. main)
+
+**Technical Implementation:**
+1. **`ai_helper.py`** - Added `alt_workspace_token` parameter to `IncentiveAI.__init__()`
+   - Accepts optional alternate token for cross-workspace auth
+   - Uses alt token if provided, falls back to `DATABRICKS_TOKEN`
+   - Logs which token is active: "PAT Token (Cross-Workspace)" vs "PAT Token"
+   
+2. **`multi_tool_agent.py`** - Voice Activations Genie initialization
+   - Reads `DATABRICKS_VOICE_WORKSPACE_TOKEN` from environment
+   - Passes it as `alt_workspace_token` to Voice Activations Genie
+   - Other Genies (Sales, Analytics, Market) use main token
+   
+3. **`app.yaml`** - Added new environment variable
+   - `DATABRICKS_VOICE_WORKSPACE_TOKEN` with placeholder value
+   - Documented as cross-workspace token with comments
+   - User must replace with PAT from the other workspace
+
+**Setup Required:**
+1. Generate PAT token from the **other workspace** (where Voice Activations Genie lives)
+2. Update `app.yaml`: Replace `YOUR_OTHER_WORKSPACE_PAT_TOKEN_HERE` with actual token
+3. Deploy app
+4. Voice Activations button should now work! ✅
+
+**Authentication Flow:**
+```
+Voice Activations Genie
+  ↓
+Check: DATABRICKS_VOICE_WORKSPACE_TOKEN set?
+  ↓ YES
+Use alternate token → Access other workspace → Success!
+```
+
+**Logging Output:**
+```
+🔄 ALT_WORKSPACE_TOKEN: ✅ SET (***5c4) - Cross-workspace auth!
+Auth Method: PAT Token (Cross-Workspace)
+```
+
+**Files Modified:**
+- `ai_helper.py` - Added `alt_workspace_token` param, updated logging
+- `multi_tool_agent.py` - Voice Activations uses `DATABRICKS_VOICE_WORKSPACE_TOKEN`
+- `app.yaml` - Added new environment variable
+- `CROSS_WORKSPACE_AUTH_SETUP.md` - Complete setup guide
+- `CHANGELOG.md` - This entry
+
+**Benefits:**
+- 🔐 **Secure:** Each workspace uses its own PAT token
+- 🎯 **Targeted:** Only Voice Activations uses alternate token
+- 📊 **Transparent:** Logs show which auth is active
+- 🚀 **Flexible:** Can add more cross-workspace Genies easily
+
+**Troubleshooting:**
+- See `CROSS_WORKSPACE_AUTH_SETUP.md` for detailed setup steps
+- Check Troubleshooting tab logs for authentication details
+- Verify PAT token is from the **correct workspace**
+
+---
+
 ## [v2.7.0-SPIFFIT] - 2025-11-18
 ### 📞 Cross-Workspace Genie Support (Voice Activations)
 **Why:** Data analyst is fine-tuning a Voice Activations incentive calculator in another workspace. Need to test it before migrating to hackathon workspace.
