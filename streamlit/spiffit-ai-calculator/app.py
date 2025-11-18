@@ -34,7 +34,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.2.2-SPIFFIT"  # 🎸 Enhanced Demo Sidebar Examples!
+APP_VERSION = "v3.2.3-SPIFFIT"  # 🔧 Fixed auth conflicts in data extraction!
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
 logger.info("🎸 When a problem comes along... you must Spiff It! 🎸")
@@ -146,7 +146,15 @@ def extract_and_display_genie_data(answer_text, key_prefix="data"):
     try:
         # Execute query to get raw data
         from databricks.sdk import WorkspaceClient
-        w = WorkspaceClient()
+        
+        # Use profile authentication (avoids oauth/pat conflicts)
+        profile = os.getenv("DATABRICKS_PROFILE")
+        if profile:
+            w = WorkspaceClient(profile=profile)
+        else:
+            # Fall back to default auth (will use environment variables)
+            w = WorkspaceClient()
+        
         warehouse_id = os.getenv("SQL_WAREHOUSE_ID", "0962fa4cf0922125")
         
         statement = w.statement_execution.execute_statement(
