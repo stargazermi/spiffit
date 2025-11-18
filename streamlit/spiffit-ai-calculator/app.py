@@ -31,7 +31,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v2.3.1-SPIFFIT"  # 📊 Query results now display as nice tables!
+APP_VERSION = "v2.4.1-SPIFFIT"  # 🎸 Fixed lyrics: "you must Spiff It" (not "gotta")
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
 logger.info("🎸 When a problem comes along... you must Spiff It! 🎸")
@@ -94,7 +94,7 @@ if 'ai' not in st.session_state:
     st.session_state.ai, st.session_state.parser, st.session_state.multi_agent = init_ai()
 
 # Main app - "Spiff It" theme!
-st.title("⚡ Spiffit - When SPIFFs Get Tough, You Gotta Spiff It!")
+st.title("⚡ Spiffit - When SPIFFs Get Tough, You Must Spiff It!")
 st.markdown("### 🎸 *Spiff it good!* - AI-powered sales incentive intelligence")
 st.caption("💪 Powered by multi-agent AI + Databricks Genie + 100% pure hackathon energy!")
 
@@ -149,6 +149,17 @@ with st.sidebar:
     st.markdown("**🧠 Full Auto (Smart Routing):**")
     if st.button("🎯 Spiff it GOOD!", use_container_width=True, key="ex6"):
         st.session_state.chat_input_from_button = "Should we increase our SPIFF budget? Consider sales performance, leaderboards, and what competitors are doing."
+    
+    st.markdown("---")
+    st.markdown("**🔧 Test Individual Genies:**")
+    st.caption("Verify each Genie space is working")
+    
+    if st.button("📊 Sales Genie", use_container_width=True, key="test_sales"):
+        st.session_state.chat_input_from_button = "Show me our sales performance data"
+    if st.button("📈 Analytics Genie", use_container_width=True, key="test_analytics"):
+        st.session_state.chat_input_from_button = "Who won the recent SPIFF competitions?"
+    if st.button("🌐 Market Genie", use_container_width=True, key="test_market"):
+        st.session_state.chat_input_from_button = "What market intelligence data do we have?"
 
 # Tab 1: Chat (Clean Demo View)
 with tab1:

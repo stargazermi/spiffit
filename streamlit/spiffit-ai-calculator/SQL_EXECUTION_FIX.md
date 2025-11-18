@@ -244,5 +244,5 @@ logger.error(f"❌ Error type: {type(e).__name__}")
 
 ---
 
-**When data doesn't show... you gotta Spiff It (by executing SQL)!** 🎸
+**When data doesn't show... you must Spiff It (by executing SQL)!** 🎸
 

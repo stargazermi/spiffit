@@ -4,7 +4,7 @@
 
 Intelligent SPIFF analysis powered by multiple AI agents and Databricks Genie spaces.
 
-**🎵 Theme Song:** "Spiff It" - A hackathon anthem based on Devo's "Whip It", because when SPIFFs get tough, you gotta Spiff It... GOOD!
+**🎵 Theme Song:** "Spiff It" - A hackathon anthem based on Devo's "Whip It", because when SPIFFs get tough, you must Spiff It... GOOD!
 
 ## 🎯 Overview
 

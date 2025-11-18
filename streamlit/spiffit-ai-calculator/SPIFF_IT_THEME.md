@@ -36,7 +36,7 @@ Spiff it good! 🎸
 
 ### 1. **Main Title**
 ```
-⚡ Spiffit - When SPIFFs Get Tough, You Gotta Spiff It!
+⚡ Spiffit - When SPIFFs Get Tough, You Must Spiff It!
 🎸 Spiff it good! - AI-powered sales incentive intelligence
 💪 Powered by multi-agent AI + Databricks Genie + 100% pure hackathon energy!
 ```
@@ -87,7 +87,7 @@ Changed from 🤖 (robot) to ⚡ (lightning bolt) - more energy!
 ## 🚀 Demo Tips
 
 ### Opening Line:
-> "Welcome to Spiffit! You know the song 'Whip It' by Devo? Well, when SPIFF problems come along... you gotta **Spiff It... GOOD!** 🎸"
+> "Welcome to Spiffit! You know the song 'Whip It' by Devo? Well, when SPIFF problems come along... you must **Spiff It... GOOD!** 🎸"
 
 ### Transition to Demo:
 > "And that's exactly what our multi-agent AI system does - it 'Spiffs it good' by intelligently routing queries across multiple Databricks Genie spaces, web search, and foundation models to give you the best sales incentive intelligence."

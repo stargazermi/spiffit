@@ -4,6 +4,44 @@ All notable changes to the Spiffit application.
 
 ---
 
+## [v2.3.1-SPIFFIT] - 2025-11-18
+### 📊 Table Formatting for Query Results
+**Why:** Raw Python lists like `['Sarah Johnson', '57730.00']` look unprofessional
+
+**Changed:**
+- ✅ **Query results now display as markdown tables** - Clean, professional grid format
+- ✅ **Column headers included** - When available from SQL metadata
+- ✅ **Generic headers as fallback** - "Column 1", "Column 2", etc. when metadata unavailable
+- ✅ **Consistent formatting** - Works for both Genie responses and direct SQL execution
+
+**Before:**
+```
+Query Results: 5 rows found
+['Sarah Johnson', '57730.00']
+['Mike Chen', '38150.00']
+```
+
+**After:**
+```
+Query Results: 5 rows found
+
+| Column 1 | Column 2 |
+|----------|----------|
+| Sarah Johnson | 57730.00 |
+| Mike Chen | 38150.00 |
+```
+
+**Technical Details:**
+- New helper method: `_format_query_results_as_table_with_headers()`
+- Supports up to 10 rows (with "...and X more rows" indicator)
+- Handles single-column and multi-column results
+- Works with both list and tuple row formats
+
+**Files Modified:**
+- `ai_helper.py` - Added table formatting methods, updated `_format_genie_attachments()` and `_execute_sql_query()`
+
+---
+
 ## [v2.3.0-SPIFFIT] - 2025-11-18
 ### 🎯 Demo Experience Enhancement
 **Why:** Make Chat tab the primary demo interface with cleaner UX
@@ -183,7 +221,7 @@ Query Results: 5 rows found
 **Why:** Hackathon theme song deserves proper branding! Based on Devo's "Whip It"
 
 **Changed:**
-- ⚡ Updated app title: "Spiffit - When SPIFFs Get Tough, You Gotta Spiff It!"
+- ⚡ Updated app title: "Spiffit - When SPIFFs Get Tough, You Must Spiff It!"
 - 🎸 Added energetic subtitle: "Spiff it good! - AI-powered sales incentive intelligence"
 - 💪 Updated tagline: "Powered by multi-agent AI + Databricks Genie + 100% pure hackathon energy!"
 - 🎵 Rewrote sidebar header: "When a problem comes along... you must Spiff It!"

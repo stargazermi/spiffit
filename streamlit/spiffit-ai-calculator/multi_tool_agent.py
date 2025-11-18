@@ -199,9 +199,13 @@ Available tools:
 User question: "{question}"
 
 Analyze the question and determine which tool(s) should be called. Consider:
-1. Does it ask about internal performance? → Use genie_sales or genie_analytics
-2. Does it ask about competitors? → Use web_search
-3. Does it need both internal and external data? → Use multiple tools
+1. Sales performance/quota/deals → genie_sales
+2. SPIFF winners/leaderboards/top performers → genie_analytics  
+3. Historical market data → genie_market
+4. Competitor programs/promotions → web_search
+5. Comprehensive/strategic questions → Call ALL relevant tools (prefer calling multiple)
+
+**IMPORTANT:** For comprehensive questions asking about "performance AND winners AND competitors", call ALL applicable tools.
 
 Respond in JSON format:
 {{
@@ -210,9 +214,10 @@ Respond in JSON format:
 }}
 
 Examples:
-- "Who are our top performers?" → {{"tools": ["genie_analytics"], "reasoning": "Internal leaderboard query"}}
+- "Who are our top performers?" → {{"tools": ["genie_sales", "genie_analytics"], "reasoning": "Need both sales data and leaderboard"}}
 - "What is AT&T offering?" → {{"tools": ["web_search"], "reasoning": "Competitor intelligence query"}}
-- "How do our SPIFFs compare to Verizon?" → {{"tools": ["genie_analytics", "web_search"], "reasoning": "Need both internal and competitor data"}}
+- "Compare our SPIFFs to Verizon" → {{"tools": ["genie_sales", "genie_analytics", "web_search"], "reasoning": "Need internal data + competitor intel"}}
+- "Should we increase budget?" → {{"tools": ["genie_sales", "genie_analytics", "genie_market", "web_search"], "reasoning": "Strategic decision needs all data sources"}}
 """
 
         try:
