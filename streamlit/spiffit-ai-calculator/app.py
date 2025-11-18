@@ -34,7 +34,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.5.1-SPIFFIT"  # 🎯 Fixed pivot message timing!
+APP_VERSION = "v3.6.0-SPIFFIT"  # 🎯 Fixed pivot message timing!
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"🎸 Spiffit v{APP_VERSION} - Deployed: {DEPLOYMENT_TIME}")
 
@@ -281,13 +281,20 @@ def extract_and_display_genie_data(answer_text, key_prefix="data", display_ui=Tr
                     )
                 
                 with col2:
-                    # Copy for email
-                    email_format = f"{title}\n{'='*60}\n\n"
-                    email_format += df.to_string(index=False)
-                    
+                    # Copy for email - modal dialog
                     if st.button("📋 Copy for Email", key=f"copy_email_{key_prefix}", use_container_width=True):
-                        st.toast("✅ Copied to clipboard!")
-                        st.code(email_format, language=None)
+                        # Use popover for modal-like experience
+                        with st.container():
+                            st.markdown("### 📧 Email-Ready Format")
+                            st.caption("Copy the text below to paste into your email:")
+                            
+                            # Create nicely formatted email content
+                            email_format = f"**{title}**\n\n"
+                            email_format += df.to_markdown(index=False)
+                            
+                            # Display in code block for easy copying
+                            st.code(email_format, language=None)
+                            st.info("💡 Click inside the box above and press Ctrl+A to select all, then Ctrl+C to copy")
             
             # ⏱️ TIMING: Data extraction complete
             elapsed = time.time() - start_time
@@ -576,15 +583,31 @@ Show the results sorted by Total MRR descending."""
                 answer = re.sub(r'\*\*SQL Query:\*\*.*?(?=\n\n|\Z)', '', answer, flags=re.DOTALL)
                 answer = answer.strip()
                 
+                # Truncate the answer to show only intro (prevent auto-scroll)
+                # Find the first 3-4 sentences or first paragraph
+                sentences = answer.split('. ')
+                if len(sentences) > 4:
+                    intro = '. '.join(sentences[:4]) + '.'
+                    full_detail = answer
+                else:
+                    intro = answer
+                    full_detail = None
+                
                 result_msg = {
                     "role": "assistant",
-                    "content": answer
+                    "content": intro
                 }
                 st.session_state.demo_messages.append(result_msg)
                 
-                # Display result immediately
+                # Display truncated intro immediately
                 with st.chat_message("assistant"):
-                    st.markdown(result_msg["content"])
+                    st.markdown(intro)
+                    
+                    # If there's more content, show expander
+                    if full_detail and len(full_detail) > len(intro) + 50:
+                        with st.expander("📋 **Click to see full competitor analysis**"):
+                            st.markdown(full_detail)
+                
                 st.session_state.demo_auto_displayed += 1
             except Exception as e:
                 error_msg = {
