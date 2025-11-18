@@ -1,4 +1,4 @@
-# Spiffit AI Calculator - Changelog
+# Spiffit Multi-Agent - Changelog
 
 ## How to Update Version
 
@@ -12,6 +12,44 @@ When deploying new changes:
 ---
 
 ## Version History
+
+### v2.0.0-DEMO - 2025-11-18
+**🎉 Major UI Simplification & Rebranding**
+
+**Branding:**
+- Renamed from "Spiffit AI Calculator" to "Spiffit Multi-Agent"
+- Emphasis on multi-agent architecture for better stakeholder communication
+
+**Tabs Restructured:**
+- **🧠 Intelligence** (NEW): Single unified tab replacing old Chat + Competitor Intel
+  - All queries in one place
+  - Real-time visibility of which Genies were called
+  - Smart routing with graceful fallbacks
+  - Clickable examples in sidebar (no more copy/paste!)
+- **📐 Architecture & Tech Stack** (NEW): Complete system overview
+  - Multi-agent flow diagram
+  - Databricks components used (Genie, Foundation Models, Unity Catalog, etc.)
+  - Foundation models in use (Llama 3.1 70B, GPT-5.1, etc.)
+  - Genie space configuration status
+  - Guide to verify Genie calls in Databricks UI
+- **🔧 Troubleshooting**: Kept with authentication logs and connection testing
+
+**Sidebar Improvements:**
+- Clickable example queries organized by complexity:
+  - 🔍 Single Agent (one Genie)
+  - 🤖 Multi-Agent (multiple Genies + routing)
+  - 🧠 Smart Routing (AI chooses best sources)
+
+**User Experience:**
+- Clearer demonstration of multi-agent capabilities
+- Better visibility into which agents handle each query
+- Architecture tab helps explain the system to stakeholders
+- Examples showcase multi-Genie routing and AI reasoning
+
+**Files Updated:**
+- `app.py` - Complete UI restructure, version → v2.0.0-DEMO
+- `README.md` - Updated for new branding and features
+- `CHANGELOG.md` - Added v2.0.0 entry
 
 ### v1.4.7-DEMO - 2024-11-18
 **🔧 Fixed Authentication Conflict in ALL Files**

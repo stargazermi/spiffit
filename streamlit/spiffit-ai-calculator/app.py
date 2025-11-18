@@ -30,13 +30,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v1.4.7-DEMO"  # Fixed auth conflict in ALL files
+APP_VERSION = "v2.0.0-DEMO"  # Simplified multi-agent UI
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
 
 # Page configuration
 st.set_page_config(
-    page_title="Spiffit AI Calculator",
+    page_title="Spiffit Multi-Agent",
     page_icon="🤖",
     layout="wide"
 )
@@ -92,11 +92,11 @@ if 'ai' not in st.session_state:
     st.session_state.ai, st.session_state.parser, st.session_state.multi_agent = init_ai()
 
 # Main app
-st.title("🤖 Spiffit AI Calculator")
-st.caption("Ask me anything about incentives in plain English!")
+st.title("🤖 Spiffit Multi-Agent")
+st.caption("Intelligent SPIFF analysis powered by multiple AI agents and Genie spaces")
 
-# Create tabs for main app, competitor intel, and troubleshooting
-tab1, tab2, tab3 = st.tabs(["💬 Chat", "🌐 Competitor Intel", "🔧 Troubleshooting"])
+# Create tabs for intelligence, architecture, and troubleshooting
+tab1, tab2, tab3 = st.tabs(["🧠 Intelligence", "📐 Architecture & Tech Stack", "🔧 Troubleshooting"])
 
 # Sidebar with configuration and examples
 with st.sidebar:
@@ -121,189 +121,104 @@ with st.sidebar:
     
     st.markdown("---")
     st.header("📝 Example Questions")
-    st.markdown("""
-    **Basic Queries:**
-    - "What's my incentive?"
-    - "Show John Smith's total payout"
+    st.markdown("**Click any example to try it:**")
     
-    **Top Performers:**
-    - "Show me the top 10 performers"
-    - "Who has the highest MRR?"
+    # Initialize input state
+    if "intelligence_input" not in st.session_state:
+        st.session_state.intelligence_input = None
     
-    **What-If Scenarios:**
-    - "What if I close $50K more?"
-    - "What if I add $25K in renewals?"
+    st.markdown("**🔍 Single Agent (One Genie Space):**")
+    if st.button("📊 Top sales performers", use_container_width=True, key="ex1"):
+        st.session_state.intelligence_input = "Show me the top performers this quarter"
+    if st.button("🏆 Recent SPIFF winners", use_container_width=True, key="ex2"):
+        st.session_state.intelligence_input = "Who won the last SPIFF competition?"
     
-    **Comparisons:**
-    - "Compare my performance to average"
-    - "How do I rank in my region?"
-    """)
+    st.markdown("**🤖 Multi-Agent (Multiple Genies + Routing):**")
+    if st.button("⚔️ Internal vs Competitors", use_container_width=True, key="ex3"):
+        st.session_state.intelligence_input = "Compare our top performers with AT&T's SPIFF programs"
+    if st.button("💡 Strategic Recommendations", use_container_width=True, key="ex4"):
+        st.session_state.intelligence_input = "Based on our sales data and competitor intel, what SPIFFs should we offer next month?"
+    if st.button("📈 Market Analysis", use_container_width=True, key="ex5"):
+        st.session_state.intelligence_input = "How do our incentives compare to Verizon and T-Mobile?"
+    
+    st.markdown("**🧠 Smart Routing (AI chooses best sources):**")
+    if st.button("🎯 Comprehensive Analysis", use_container_width=True, key="ex6"):
+        st.session_state.intelligence_input = "Should we increase our SPIFF budget? Consider sales performance, leaderboards, and what competitors are doing."
 
-# Tab 1: Chat Interface
+# Tab 1: Intelligence (Multi-Agent)
 with tab1:
-    st.markdown("---")
+    st.header("🧠 Multi-Agent Intelligence")
+    st.caption("Query multiple Genie spaces + web search with smart routing")
     
-    # Initialize chat history
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-        # Add welcome message
-        st.session_state.messages.append({
+    # Initialize intelligence chat history
+    if "intelligence_messages" not in st.session_state:
+        st.session_state.intelligence_messages = []
+        st.session_state.intelligence_messages.append({
             "role": "assistant",
-            "content": "👋 Hi! I'm here to help with incentive questions. Try asking me something like 'What's my Q4 incentive?' or 'Show top performers'"
-        })
-    
-    # Display chat history
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
-    
-    # Chat input
-    if prompt := st.chat_input("Ask about incentives..."):
-        # Add user message to chat
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
-        
-        # Process the question
-        with st.chat_message("assistant"):
-            with st.spinner("Thinking..."):
-                # Parse the question
-                parsed = st.session_state.parser.parse_question(prompt)
-                
-                # For demo purposes, show what was understood
-                with st.expander("🔍 What I understood"):
-                    st.json(parsed)
-                
-                # Route based on intent
-                if parsed['intent'] == "calculate_incentive":
-                    if parsed['employee_name']:
-                        response = f"""
-I would calculate the incentive for **{parsed['employee_name']}** here.
-
-**Next steps to complete this:**
-1. Connect to your Delta Lake tables (from cursor/prototypes)
-2. Import IncentiveCalculator class
-3. Call: `calculator.calculate_total_incentive("{parsed['employee_name']}")`
-4. Format the results with the AI helper
-
-**For now, this is a demo showing the query parsing works!**
-"""
-                    else:
-                        response = "I'd love to help! Could you tell me whose incentive you want to calculate?"
-                
-                elif parsed['intent'] == "what_if":
-                    if parsed['employee_name'] and parsed['additional_amount']:
-                        response = f"""
-I would run a what-if scenario for **{parsed['employee_name']}** 
-adding **${parsed['additional_amount']:,.0f}** to their {parsed['metric']}.
-
-**Next steps:**
-1. Call: `calculator.calculate_what_if_scenario("{parsed['employee_name']}", {parsed['additional_amount']})`
-2. Show the projection with tier changes
-"""
-                    else:
-                        response = "For what-if scenarios, I need a name and amount. Try: 'What if John Smith closes $50K more?'"
-                
-                elif parsed['intent'] == "show_top":
-                    response = f"""
-I would show the top performers by **{parsed['metric']}** here.
-
-**Next steps:**
-1. Call: `calculator.get_top_performers(metric="{parsed['metric']}", limit=10)`
-2. Format as a leaderboard
-"""
-                
-                elif parsed['intent'] == "compare":
-                    response = "Comparison queries are coming soon! For now, try asking about specific employee incentives."
-                
-                else:
-                    # Fall back to AI
-                    response = st.session_state.ai.ask_question(prompt)
-                
-                st.markdown(response)
-        
-        # Add assistant response to chat
-        st.session_state.messages.append({"role": "assistant", "content": response})
-
-# Tab 2: Competitor Intelligence
-with tab2:
-    st.header("🌐 Competitor Intelligence")
-    st.caption("Multi-tool agent: Genie spaces + web search for comprehensive market intelligence")
-    
-    # Initialize competitor chat history
-    if "competitor_messages" not in st.session_state:
-        st.session_state.competitor_messages = []
-        st.session_state.competitor_messages.append({
-            "role": "assistant",
-            "content": """👋 **Welcome to Competitor Intelligence!**
+            "content": """👋 **Welcome to Spiffit Multi-Agent!**
             
-I can help you research competitor SPIFF programs and compare them with our internal data.
+I can intelligently route your questions across:
+- 🏢 **3 Genie Spaces** (Sales, Analytics, Market)
+- 🌐 **Web Search** for competitor intel
+- 🤖 **Foundation Models** for synthesis
 
-**Try asking:**
-- "What SPIFFs is AT&T offering in Q4?"
-- "Compare our top performers with Verizon's programs"
-- "How do our incentives stack up against competitors?"
-- "What are the common themes in competitor promotions?"
+**Try the examples in the sidebar →** or ask anything!
 
-💡 **Behind the scenes:** I'll automatically route your query to the right tools:
-- 🏢 **Genie spaces** for internal data
-- 🌐 **Web search** for competitor intel
-- 🤖 **GPT-5.1** for synthesis and recommendations
+💡 **I'll show you which agents I use for each query.**
 """
         })
     
-    # Show example queries
-    st.markdown("### 📋 Quick Actions")
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if st.button("🔍 Search AT&T Programs", key="att_btn"):
-            st.session_state.competitor_input = "What SPIFF programs is AT&T offering in Q4 2024?"
-        if st.button("📊 Compare All Competitors", key="compare_btn"):
-            st.session_state.competitor_input = "Compare SPIFF programs across AT&T, Verizon, and T-Mobile"
-    
-    with col2:
-        if st.button("⚔️ Our SPIFFs vs Competitors", key="vs_btn"):
-            st.session_state.competitor_input = "How do our SPIFF programs compare to competitor offerings?"
-        if st.button("💡 Get Recommendations", key="rec_btn"):
-            st.session_state.competitor_input = "Based on competitor analysis, what SPIFFs should we offer?"
-    
-    st.markdown("---")
-    
     # Display chat history
-    for message in st.session_state.competitor_messages:
+    for message in st.session_state.intelligence_messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
+            
+            # Show which Genies were called
+            if message["role"] == "assistant" and "genie_calls" in message:
+                st.info(f"**🧠 Genies Called:** {', '.join(message['genie_calls'])}")
             
             # Show tool details if available
             if message["role"] == "assistant" and "tool_details" in message:
-                with st.expander("🔧 Tools Used"):
+                with st.expander("🔧 Tools & Routing Details"):
                     st.json(message["tool_details"])
     
-    # Chat input (check for programmatic input first)
-    if "competitor_input" in st.session_state and st.session_state.competitor_input:
-        prompt = st.session_state.competitor_input
-        st.session_state.competitor_input = None  # Clear after use
+    # Chat input (check for programmatic input from sidebar first)
+    if st.session_state.intelligence_input:
+        prompt = st.session_state.intelligence_input
+        st.session_state.intelligence_input = None  # Clear after use
     else:
-        prompt = st.chat_input("Ask about competitor intelligence...", key="competitor_chat")
+        prompt = st.chat_input("Ask anything about SPIFFs, sales, or competitors...", key="intelligence_chat")
     
     if prompt:
         # Add user message
-        st.session_state.competitor_messages.append({"role": "user", "content": prompt})
+        st.session_state.intelligence_messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
         
         # Process with multi-tool agent
         with st.chat_message("assistant"):
-            with st.spinner("🔍 Searching across data sources..."):
+            with st.spinner("🔍 Analyzing and routing to best agents..."):
                 try:
                     result = st.session_state.multi_agent.query(prompt)
                     
                     # Display main answer
                     st.markdown(result["answer"])
                     
+                    # Determine which Genies were called
+                    genie_calls = []
+                    if "genie_sales" in result.get("tools_used", []):
+                        genie_calls.append("Sales")
+                    if "genie_analytics" in result.get("tools_used", []):
+                        genie_calls.append("Analytics")
+                    if "genie_market" in result.get("tools_used", []):
+                        genie_calls.append("Market")
+                    
+                    # Show which Genies were used
+                    if genie_calls:
+                        st.info(f"**🧠 Genies Called:** {', '.join(genie_calls)}")
+                    
                     # Show routing and tools used
-                    with st.expander("🧠 AI Reasoning & Tools"):
+                    with st.expander("🧠 AI Reasoning & Smart Routing"):
                         st.markdown(f"**Routing Decision:** {result['routing_reasoning']}")
                         st.markdown(f"**Tools Used:** {', '.join(result['tools_used'])}")
                         
@@ -312,32 +227,265 @@ I can help you research competitor SPIFF programs and compare them with our inte
                             st.warning("**⚠️ Some tools encountered errors:**")
                             for tool_name, error in result["errors"].items():
                                 st.error(f"**{tool_name}:** {error[:200]}...")
-                            st.info("💡 See GENIE_PERMISSIONS_FIX.md for troubleshooting Genie access issues")
+                            st.info("💡 Check Troubleshooting tab for Genie connection details")
                         
                         # Show raw results from each tool
                         if result.get("raw_results"):
-                            st.markdown("**📊 Raw Results:**")
+                            st.markdown("**📊 Raw Results from Each Agent:**")
                             for tool_name, tool_result in result["raw_results"].items():
                                 st.markdown(f"**{tool_name.upper()}:**")
-                                st.text(tool_result[:500] + "..." if len(tool_result) > 500 else tool_result)
+                                st.code(tool_result[:500] + "..." if len(tool_result) > 500 else tool_result)
                     
                     # Save response with metadata
-                    st.session_state.competitor_messages.append({
+                    st.session_state.intelligence_messages.append({
                         "role": "assistant",
                         "content": result["answer"],
+                        "genie_calls": genie_calls,
                         "tool_details": {
-                            "tools_used": result["tools_used"],
-                            "routing_reasoning": result["routing_reasoning"]
+                            "routing": result["routing_reasoning"],
+                            "tools": result["tools_used"],
+                            "errors": result.get("errors", {}),
                         }
                     })
                     
                 except Exception as e:
-                    error_msg = f"❌ Error querying multi-tool agent: {str(e)}"
+                    error_msg = f"❌ Error: {str(e)}"
                     st.error(error_msg)
-                    st.session_state.competitor_messages.append({
+                    st.session_state.intelligence_messages.append({
                         "role": "assistant",
                         "content": error_msg
                     })
+
+# Tab 2: Architecture & Tech Stack
+with tab2:
+    st.header("📐 Architecture & Tech Stack")
+    st.caption("Multi-agent system architecture powered by Databricks")
+    
+    # Architecture Overview
+    st.markdown("## 🏗️ System Architecture")
+    st.markdown("""
+This is a **multi-agent AI system** that intelligently routes queries across multiple specialized agents:
+
+```
+User Query
+    ↓
+🤖 Orchestrator (Llama 3.1 70B)
+    ↓
+    ├─→ 🧠 Genie Agent: Sales Performance
+    ├─→ 🧠 Genie Agent: Analytics & Winners  
+    ├─→ 🧠 Genie Agent: Market Intelligence
+    ├─→ 🌐 Web Search Agent (Competitor Intel)
+    └─→ 📊 Foundation Model (Synthesis)
+    ↓
+🧠 AI Synthesis & Response
+```
+
+### 🔄 Smart Routing Flow
+
+1. **Query Analysis**: LLM analyzes intent and determines best sources
+2. **Parallel Execution**: Multiple agents query simultaneously
+3. **Error Handling**: Graceful fallbacks if any agent fails
+4. **Synthesis**: Combine results into comprehensive answer
+5. **Transparency**: Show which agents were used
+
+---
+""")
+    
+    # Databricks Components Used
+    st.markdown("## 🛠️ Databricks Components")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("### 🤖 Agent Tools")
+        st.markdown("""
+**Genie** (Natural Language to SQL)
+- 3 specialized spaces
+- Real-time SQL query generation
+- Data exploration via conversation
+
+**Foundation Models** (LLM Platform)
+- Meta Llama 3.1 70B (Orchestrator)
+- GPT-5.1 (Synthesis)
+- Claude Opus 4.1 (Available)
+- Gemini 2.5 (Available)
+
+**Databricks Apps**
+- Streamlit hosting
+- Secure authentication
+- Auto-scaling infrastructure
+""")
+    
+    with col2:
+        st.markdown("### 📊 Data & Infrastructure")
+        st.markdown("""
+**Unity Catalog**
+- Data governance
+- Schema: `hackathon.hackathon_spiffit`
+- Tables: sales, winners, competitors
+
+**SQL Warehouse**
+- Serverless compute
+- Genie backend
+- Real-time queries
+
+**GitHub Integration**
+- Version control
+- CI/CD deployment
+- Repo: `/Shared/spiffit-dev`
+""")
+    
+    # Models Used
+    st.markdown("---")
+    st.markdown("## 🎯 Models in Use")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.info("""
+**🧠 Orchestrator**
+
+**Model:** Llama 3.1 70B Instruct
+
+**Role:** Query routing, intent analysis
+
+**Why:** Fast, capable reasoning
+""")
+    
+    with col2:
+        st.success("""
+**🤖 Synthesis**
+
+**Model:** GPT-5.1 (mock)
+
+**Role:** Combine multi-source results
+
+**Why:** Strong coherence, context understanding
+""")
+    
+    with col3:
+        st.warning("""
+**🧠 Genie Backend**
+
+**Model:** Databricks-tuned LLM
+
+**Role:** SQL generation from natural language
+
+**Why:** Optimized for data queries
+""")
+    
+    # Genie Spaces Configuration
+    st.markdown("---")
+    st.markdown("## 🧠 Configured Genie Spaces")
+    
+    genie_sales_id = os.getenv("GENIE_SALES_SPACE_ID", "Not configured")
+    genie_analytics_id = os.getenv("GENIE_ANALYTICS_SPACE_ID", "Not configured")
+    genie_market_id = os.getenv("GENIE_MARKET_SPACE_ID", "Not configured")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown("### 📊 Sales Performance")
+        if genie_sales_id != "Not configured":
+            st.success(f"✅ Connected")
+            with st.expander("Details"):
+                st.code(f"Space ID: {genie_sales_id}")
+                st.markdown("""
+**Data:**
+- Sales performance
+- AE metrics
+- Deal pipeline
+- Quota attainment
+""")
+        else:
+            st.error("❌ Not configured")
+    
+    with col2:
+        st.markdown("### 🏆 Analytics & Winners")
+        if genie_analytics_id != "Not configured":
+            st.success(f"✅ Connected")
+            with st.expander("Details"):
+                st.code(f"Space ID: {genie_analytics_id}")
+                st.markdown("""
+**Data:**
+- SPIFF winners
+- Leaderboards
+- Historical results
+- Incentive payouts
+""")
+        else:
+            st.error("❌ Not configured")
+    
+    with col3:
+        st.markdown("### 🌐 Market Intelligence")
+        if genie_market_id != "Not configured":
+            st.success(f"✅ Connected")
+            with st.expander("Details"):
+                st.code(f"Space ID: {genie_market_id}")
+                st.markdown("""
+**Data:**
+- Competitor SPIFFs
+- Market trends
+- Industry benchmarks
+- Pricing intelligence
+""")
+        else:
+            st.error("❌ Not configured")
+    
+    # Tech Stack Summary
+    st.markdown("---")
+    st.markdown("## 📚 Complete Tech Stack")
+    st.markdown("""
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| **Frontend** | Streamlit | Interactive UI |
+| **Hosting** | Databricks Apps | Secure deployment |
+| **AI Orchestration** | Llama 3.1 70B | Query routing |
+| **Data Query** | Genie (3 spaces) | Natural language to SQL |
+| **Synthesis** | Foundation Models | Multi-source integration |
+| **Data Platform** | Unity Catalog | Governance & storage |
+| **Compute** | SQL Warehouse | Serverless query engine |
+| **Auth** | PAT Token | API authentication |
+| **Version Control** | GitHub | Code management |
+| **Languages** | Python 3.11 | Application logic |
+
+**Key Innovation:** Smart routing with graceful fallbacks ensures queries succeed even if individual agents fail.
+""")
+    
+    # How to check Genie calls in Databricks
+    st.markdown("---")
+    st.markdown("## 🔍 Verify Genie Calls in Databricks")
+    st.markdown("""
+To see which Genie spaces are actually being called in Databricks:
+
+1. **Navigate to your Databricks workspace:**
+   - Go to: `https://dbc-4a93b454-f17b.cloud.databricks.com/`
+
+2. **Open SQL Warehouse Query History:**
+   - Click **SQL** in the left sidebar
+   - Select **SQL Warehouses**
+   - Find: `hackaithon_Spiffit_serverless`
+   - Click **Query History** tab
+
+3. **Filter by time:**
+   - Set time range to **Last hour**
+   - You'll see all SQL queries generated by Genie
+
+4. **Identify which Genie space was used:**
+   - Each query shows the **database/schema** accessed
+   - Look for `hackathon.hackathon_spiffit.*` tables
+   - Match to Genie space:
+     - `sales_performance` → **Sales Genie**
+     - `spiff_winners` → **Analytics Genie**
+     - `competitor_spiffs` → **Market Genie**
+
+5. **View in Genie UI:**
+   - Go to **Genie** in the left sidebar
+   - Click on each Genie space
+   - View **Conversation History** to see all queries
+
+💡 **Pro Tip:** The **Intelligence tab** above shows which Genies were called directly in the UI!
+""")
 
 # Tab 3: Troubleshooting & Environment
 with tab3:

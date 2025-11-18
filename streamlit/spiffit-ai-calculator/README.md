@@ -1,206 +1,241 @@
-# Spiffit AI Calculator
+# 🤖 Spiffit Multi-Agent
 
-## 🎯 Purpose
-Natural language interface for incentive calculations and competitor intelligence using Databricks AI.
+Intelligent SPIFF analysis powered by multiple AI agents and Databricks Genie spaces.
 
-## ✨ Features
+## 🎯 Overview
 
-### 💬 Chat Tab
-- Natural language queries for internal incentive data
-- Connected to Genie space for sales performance
-- Intent extraction and query parsing
+A **multi-agent AI system** that intelligently routes questions across:
+- 🧠 **3 specialized Genie spaces** (Sales, Analytics, Market Intelligence)
+- 🌐 **Web search** for competitor intelligence
+- 🤖 **Foundation Models** for synthesis and reasoning
 
-### 🌐 Competitor Intelligence Tab (NEW v1.3.0!)
-- **Multi-tool agent** with automatic smart routing
-- **Source selection**:
-  - Internal queries → Genie spaces (sales, analytics, market)
-  - Competitor queries → Web search tool
-  - Complex queries → Multiple sources + AI synthesis
-- **GPT-5.1** orchestration for reasoning and recommendations
-- **Transparent AI** - see which tools were used and routing decisions
-
-### 🔧 Troubleshooting Tab
-- Environment variable inspection
-- Connection status monitoring
-- Deployment version/timestamp tracking
-
-## 📁 Files
-- `app.py` - Main Streamlit application with 3 tabs
-- `ai_helper.py` - AI/LLM integration (Genie & Foundation Models)
-- `query_parser.py` - Natural language query parsing
-- `multi_tool_agent.py` - **NEW:** Smart routing orchestrator
-- `web_search_tool.py` - **NEW:** Competitor intelligence search
-- `app.yaml` - Databricks App configuration
-- `requirements.txt` - Python dependencies
-- `CHANGELOG.md` - Version history
-- `README.md` - This file
-
-## 🚀 Quick Start
-
-### ⭐ RECOMMENDED: Deploy to Databricks Apps
-
-```bash
-# 1. Push to Git
-git add .
-git commit -m "Add AI calculator app"
-git push origin main
-
-# 2. In Databricks (https://dbc-4a93b454-f17b.cloud.databricks.com):
-#    - Go to Apps
-#    - Create App
-#    - Source: github.com/stargazermi/spiffit
-#    - Path: streamlit/spiffit-ai-calculator/
-#    - Deploy! (takes ~2-3 minutes)
-```
-
-**Why Databricks Apps?**
-- ✅ Automatic authentication (no CLI setup)
-- ✅ All Genie spaces pre-configured in `app.yaml`
-- ✅ Share with team via URL
-- ✅ Production-ready hosting
-
-**See `DEPLOY_TO_DATABRICKS.md` for detailed steps.**
+**Key Innovation:** Smart routing with graceful fallbacks ensures queries succeed even if individual agents fail.
 
 ---
 
-### Option 2: Test Locally (Advanced)
+## ✨ Features
 
-Requires Databricks CLI authentication:
+### 🧠 Intelligence Tab
+- **Single unified interface** for all queries
+- **Smart routing** automatically selects best agents
+- **Real-time visibility** of which Genies were called
+- **Multi-source synthesis** combines data from multiple agents
+- **Clickable examples** in sidebar for instant testing
 
-```bash
-# 1. Authenticate
-databricks auth login --host https://dbc-4a93b454-f17b.cloud.databricks.com --profile dlk-hackathon
+### 📐 Architecture & Tech Stack Tab
+- **System architecture diagram** showing multi-agent flow
+- **Databricks components** used (Genie, Foundation Models, Unity Catalog, etc.)
+- **Model details** (Llama 3.1 70B, GPT-5.1, etc.)
+- **Genie space status** showing which spaces are connected
+- **Complete tech stack** reference table
+- **Guide to verify Genie calls** in Databricks UI
 
-# 2. Install and run
-cd streamlit/spiffit-ai-calculator
-pip install -r requirements.txt
-streamlit run app.py --server.port 8000
+### 🔧 Troubleshooting Tab
+- **Environment variable inspection**
+- **Authentication logs** showing which method is used
+- **Genie connection testing** with detailed errors
+- **Deployment version tracking**
+- **Live log viewer** for debugging
+
+---
+
+## 📁 Project Structure
+
+```
+streamlit/spiffit-ai-calculator/
+├── app.py                    # Main Streamlit app (v2.0.0)
+├── ai_helper.py              # Genie & Foundation Model integration
+├── query_parser.py           # NLP query parsing
+├── multi_tool_agent.py       # Smart routing orchestrator
+├── web_search_tool.py        # Competitor intelligence
+├── spiff_agent.py            # Autonomous SPIFF agent
+├── app.yaml                  # Databricks App config
+├── requirements.txt          # Python dependencies
+├── env.example               # Local env template
+├── CHANGELOG.md              # Version history
+└── README.md                 # This file
 ```
 
-**Note:** Local testing requires `.env` file with `DATABRICKS_PROFILE=dlk-hackathon`
+---
+
+## 🚀 Deployment
+
+### ⭐ RECOMMENDED: Databricks Apps
+
+```bash
+# 1. Push to GitHub
+git add .
+git commit -m "Deploy Spiffit Multi-Agent v2.0"
+git push origin spiffit-dev
+
+# 2. In Databricks: https://dbc-4a93b454-f17b.cloud.databricks.com
+#    - Go to Apps
+#    - Find: spiffit-mocking-bird
+#    - Stop & Start (auto-pulls latest from Git)
+```
+
+**Or use the deployment script:**
+```powershell
+# PowerShell
+.\deploy-to-databricks.ps1 -AppName "spiffit-mocking-bird" -RepoId 2748186069098876
+
+# Bash
+./deploy-to-databricks.sh spiffit-mocking-bird 2748186069098876
+```
+
+**Why Databricks Apps?**
+- ✅ Automatic authentication
+- ✅ All Genie spaces pre-configured
+- ✅ PAT token securely stored in Secrets
+- ✅ Share with team via URL
+- ✅ Production-ready hosting
+
+---
 
 ## 🔧 Configuration
 
 ### ✅ Genie Spaces Already Configured!
 
-Your Genie spaces are already set up with IDs from `dlk-hackathon` workspace:
+Your Genie spaces are set up in `app.yaml`:
 
-- **Sales:** `spg-mocking-bird-sales` → `01f0c403c3cf184e9b7f1f6c9ee45905`
-- **Analytics:** `spg-mocking-bird-analytics` → `01f0c404048613b3b494b1a64a1bca84`
-- **Market:** `spg-mocking-bird-market` → `01f0c4043acf19dc936c37fd2a8bced3`
+| Space | Name | ID |
+|-------|------|-----|
+| **Sales** | `spg-mocking-bird-sales` | `01f0c403c3cf184e9b7f1f6c9ee45905` |
+| **Analytics** | `spg-mocking-bird-analytics` | `01f0c404048613b3b494b1a64a1bca84` |
+| **Market** | `spg-mocking-bird-market` | `01f0c4043acf19dc936c37fd2a8bced3` |
 
-### For Local Testing:
+### 🔒 PAT Token Authentication
 
-**Option 1: Use the example file**
-```bash
-# Copy the example file
-cp env.example .env
+For Genie access, the app uses PAT token authentication stored in Databricks Secrets:
 
-# Edit .env if you want to change space IDs (optional)
-# Then run:
-streamlit run app.py --server.port 8000
-```
+- **Secret Scope:** `spiffit-secrets`
+- **Secret Key:** `databricks-pat-token`
+- **How to update:** See `GENIE_PAT_TOKEN_SETUP.md`
 
-**Option 2: Set environment variables directly**
-```bash
-# Windows (PowerShell)
-$env:GENIE_SPACE_ID="01f0c403c3cf184e9b7f1f6c9ee45905"
-streamlit run app.py --server.port 8000
-
-# Mac/Linux
-export GENIE_SPACE_ID="01f0c403c3cf184e9b7f1f6c9ee45905"
-streamlit run app.py --server.port 8000
-```
-
-**For Databricks deployment:**
-Space IDs are already configured in `app.yaml` - just deploy!
-
-**If not configured:** App will show a warning and fall back to Foundation Model API.
-
-## 📊 What It Does Right Now
-
-✅ **Query Parsing** - Understands user intent
-- Calculates incentives
-- Shows top performers
-- What-if scenarios
-- Comparisons
-
-✅ **AI Integration** - Connected to Databricks LLMs
-- Genie support
-- Foundation Model API support
-- Natural language responses
-
-⏳ **Next Steps** - Connect to calculator
-- Import your calculator from `cursor/prototypes/02_incentive_calculator.py`
-- Connect to Delta Lake tables
-- Return real calculation results
-
-## 🔗 Connecting the Calculator
-
-To make this work with real data:
-
-1. **Copy calculator code:**
-```bash
-cp cursor/prototypes/02_incentive_calculator.py streamlit/spiffit-ai-calculator/
-```
-
-2. **Update app.py imports:**
-```python
-from incentive_calculator import IncentiveCalculator
-
-# Initialize calculator
-calculator = IncentiveCalculator(spark)
-```
-
-3. **Replace demo responses with real calculations:**
-```python
-if parsed['intent'] == "calculate_incentive":
-    result = calculator.calculate_total_incentive(parsed['employee_name'])
-    response = ai.ask_question(
-        f"Format this data: {result}",
-        calculator_results=result
-    )
-```
-
-See `ai_integration_guide.md` in the parent folder for detailed instructions.
+---
 
 ## 🎯 Example Queries
 
-### 💬 Chat Tab (Internal Data):
-- "What's my incentive?"
-- "Show John Smith's total payout"
-- "Who are the top 10 performers?"
-- "What if I close $50K more in MRR?"
-- "How am I tracking against my budget?"
+### 🔍 Single Agent (One Genie):
+- "Show me the top performers this quarter"
+- "Who won the last SPIFF competition?"
 
-### 🌐 Competitor Intelligence Tab (NEW!):
-- "What SPIFFs is AT&T offering in Q4?"
-- "Compare Verizon and T-Mobile programs"
-- "How do our incentives compare to competitors?"
-- "What are common themes in competitor promotions?"
-- "Recommend competitive SPIFFs based on market analysis"
+### 🤖 Multi-Agent (Multiple Genies + Routing):
+- "Compare our top performers with AT&T's SPIFF programs"
+- "Based on our sales data and competitor intel, what SPIFFs should we offer next month?"
+- "How do our incentives compare to Verizon and T-Mobile?"
+
+### 🧠 Smart Routing (AI chooses best sources):
+- "Should we increase our SPIFF budget? Consider sales performance, leaderboards, and what competitors are doing."
+
+💡 **Pro Tip:** Click any example in the sidebar to instantly test it!
+
+---
+
+## 🔍 Verify Genie Calls in Databricks
+
+### Method 1: In the App
+- Look for **"🧠 Genies Called: Sales, Analytics, Market"** after each response
+- Expand **"🧠 AI Reasoning & Smart Routing"** for full details
+
+### Method 2: In Databricks UI
+1. Go to **SQL** → **SQL Warehouses** → `hackaithon_Spiffit_serverless`
+2. Click **Query History** tab
+3. Filter by **Last hour**
+4. See all SQL queries generated by Genie
+
+### Method 3: Genie Conversation History
+1. Go to **Genie** in Databricks
+2. Click on each Genie space
+3. View **Conversation History**
+
+---
 
 ## 🆘 Troubleshooting
 
-**AI/LLM not responding?**
-- Check Databricks SDK is installed
-- Verify workspace permissions
-- Try switching between Genie/Foundation Model
+### ❌ Genie Connection Errors?
 
-**Query parsing not working?**
-- Check `query_parser.py` patterns
-- Add more employee names to the parser
-- Use the "What I understood" expander to debug
+**1. Check Authentication:**
+- Go to **🔧 Troubleshooting** tab
+- Look for: `Auth Method: PAT Token`
+- If it says `OAuth M2M`, the PAT token isn't loading
 
-**Want simpler version?**
-- See bottom of `ai_integration_guide.md` for keyword-only approach
-- No AI needed for basic routing
+**2. Verify Genie Permissions:**
+- Each Genie space needs **"Can Run"** permissions for your user
+- Go to Genie → click space → Settings → Permissions
+
+**3. Check SQL Warehouse:**
+- Go to **SQL** → **SQL Warehouses**
+- Start: `hackaithon_Spiffit_serverless`
+
+**4. View Logs:**
+- Go to **🔧 Troubleshooting** tab
+- Scroll to **"📜 Authentication & API Logs"**
+- Look for errors
+
+### 🔄 App Not Updating?
+
+```powershell
+# Re-deploy manually
+.\deploy-to-databricks.ps1 -AppName "spiffit-mocking-bird"
+```
+
+### 🐛 Still Having Issues?
+
+- Check `GENIE_PERMISSIONS_FIX.md`
+- Check `GENIE_PAT_TOKEN_SETUP.md`
+- View logs in **🔧 Troubleshooting** tab
+
+---
 
 ## 📚 Documentation
 
-- **AI Integration Guide:** `../ai_integration_guide.md`
-- **Full Implementation Plan:** `../../cursor/automation-ideas/implementation-plans/use-case-1-ai-calculator.md`
-- **Calculator Code:** `../../cursor/prototypes/02_incentive_calculator.py`
+### Core Docs:
+- **Architecture Guide:** Check the **📐 Architecture & Tech Stack** tab in the app!
+- **Multi-Genie Workflows:** `../../docs/MULTI_GENIE_WORKFLOWS.md`
+- **Smart Routing:** `../../docs/SMART_GENIE_ROUTING.md`
+- **Autonomous Agent:** `../../docs/AUTONOMOUS_SPIFF_AGENT.md`
+
+### Setup Guides:
+- **Databricks Deployment:** `DEPLOY_TO_DATABRICKS.md`
+- **Genie Setup:** `../../docs/GENIE_SETUP.md`
+- **PAT Token Setup:** `GENIE_PAT_TOKEN_SETUP.md`
+- **Permissions Fix:** `GENIE_PERMISSIONS_FIX.md`
+
+### Developer Guides:
+- **AI Integration:** `../../docs/ai_integration_guide.md`
+- **Creating Genie Spaces:** `../../docs/CREATE_GENIE_SPACES_GUIDE.md`
+- **Deployment Scripts:** `../../DEPLOYMENT_SCRIPTS.md`
+
+---
+
+## 🎉 Version History
+
+**v2.0.0-DEMO** (Current)
+- ✅ Simplified UI: Single Intelligence tab
+- ✅ Clickable examples in sidebar
+- ✅ New Architecture & Tech Stack tab
+- ✅ Real-time Genie call visibility
+- ✅ Smart routing with multi-source synthesis
+
+**v1.4.7-DEMO**
+- Fixed authentication conflicts (PAT vs OAuth)
+- Added comprehensive logging
+
+**v1.3.0**
+- Added Competitor Intelligence tab
+- Multi-tool agent with smart routing
+
+See `CHANGELOG.md` for full history.
+
+---
+
+## 🤝 Contributing
+
+This is a hackathon demo app. For questions or contributions:
+
+1. **Git Repo:** `github.com/stargazermi/spiffit`
+2. **Branch:** `spiffit-dev`
+3. **Databricks Workspace:** `dlk-hackathon`
 
 **Good luck! 🚀**
-
