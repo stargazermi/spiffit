@@ -25,7 +25,6 @@ class MultiToolAgent:
         genie_sales_id: str = None,
         genie_analytics_id: str = None,
         genie_market_id: str = None,
-        genie_voice_activations_id: str = None,
         orchestrator_model: str = "databricks-gpt-5-1"  # GPT-5.1 default (latest OpenAI)
     ):
         """
@@ -35,7 +34,6 @@ class MultiToolAgent:
             genie_sales_id: Sales performance Genie space
             genie_analytics_id: Analytics/winners Genie space
             genie_market_id: Internal market data Genie space
-            genie_voice_activations_id: Voice Activations incentive calculations (cross-workspace)
             orchestrator_model: Model for routing and synthesis
         """
         # Get authentication credentials
@@ -57,25 +55,6 @@ class MultiToolAgent:
         self.genie_sales = IncentiveAI(genie_space_id=genie_sales_id) if genie_sales_id else None
         self.genie_analytics = IncentiveAI(genie_space_id=genie_analytics_id) if genie_analytics_id else None
         self.genie_market = IncentiveAI(genie_space_id=genie_market_id) if genie_market_id else None
-        
-        # Voice Activations uses alternate workspace (host + token) for cross-workspace access
-        voice_alt_host = os.getenv("DATABRICKS_VOICE_WORKSPACE_HOST")
-        voice_alt_token = os.getenv("DATABRICKS_VOICE_WORKSPACE_TOKEN")
-        
-        if genie_voice_activations_id:
-            if voice_alt_host or voice_alt_token:
-                # Use alternate workspace for cross-workspace access
-                self.genie_voice_activations = IncentiveAI(
-                    genie_space_id=genie_voice_activations_id,
-                    alt_workspace_host=voice_alt_host,
-                    alt_workspace_token=voice_alt_token
-                )
-            else:
-                # Fallback to default workspace (if in same workspace)
-                self.genie_voice_activations = IncentiveAI(genie_space_id=genie_voice_activations_id)
-        else:
-            self.genie_voice_activations = None
-        
         self.web_search = CompetitorSearchTool()
         
         self.orchestrator_model = orchestrator_model
@@ -93,10 +72,6 @@ class MultiToolAgent:
             "genie_market": {
                 "description": "Internal market intelligence - use for our own historical market data",
                 "enabled": bool(genie_market_id)
-            },
-            "genie_voice_activations": {
-                "description": "Voice Activations incentive calculations - use for VOIP MRR, opportunity owner payouts, incremental sales incentives (NOTE: cross-workspace, being fine-tuned by data analyst)",
-                "enabled": bool(genie_voice_activations_id)
             },
             "web_search": {
                 "description": "External competitor intelligence - use for competitor SPIFF programs, promotions, market trends",
@@ -144,13 +119,6 @@ class MultiToolAgent:
                         tool_errors["genie_market"] = result
                     else:
                         tool_results["genie_market"] = result
-                        
-                elif tool_name == "genie_voice_activations" and self.genie_voice_activations:
-                    result = self.genie_voice_activations.ask_question(user_question)
-                    if "Genie error:" in result or "Unable to get space" in result:
-                        tool_errors["genie_voice_activations"] = result
-                    else:
-                        tool_results["genie_voice_activations"] = result
                         
                 elif tool_name == "web_search":
                     tool_results["web_search"] = self.web_search.search_competitor_programs(user_question)
@@ -234,9 +202,8 @@ Analyze the question and determine which tool(s) should be called. Consider:
 1. Sales performance/quota/deals → genie_sales
 2. SPIFF winners/leaderboards/top performers → genie_analytics  
 3. Historical market data → genie_market
-4. Voice Activations/VOIP incentives/MRR payouts → genie_voice_activations
-5. Competitor programs/promotions → web_search
-6. Comprehensive/strategic questions → Call ALL relevant tools (prefer calling multiple)
+4. Competitor programs/promotions → web_search
+5. Comprehensive/strategic questions → Call ALL relevant tools (prefer calling multiple)
 
 **IMPORTANT:** For comprehensive questions asking about "performance AND winners AND competitors", call ALL applicable tools.
 

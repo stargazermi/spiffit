@@ -42,15 +42,7 @@ env:
   - name: DATABRICKS_HOST
     value: "https://dbc-4a93b454-f17b.cloud.databricks.com"
   - name: DATABRICKS_TOKEN
-    value: "dapi5e40d9eb65d1af6c91866e0a35c4"  # ⚠️ TEMP: PAT token for hackathon (dlk-hackathon workspace)
-  
-  # Cross-Workspace Authentication (for Voice Activations Genie in other workspace)
-  # ⚠️ CRITICAL: You need BOTH the host URL and PAT token from the OTHER workspace!
-  # This is the workspace where Voice Activations Genie (01f0c3e4...) lives
-  - name: DATABRICKS_VOICE_WORKSPACE_HOST
-    value: "https://dbc-40f40c74-254e.cloud.databricks.com"  # ✅ Voice Activations workspace
-  - name: DATABRICKS_VOICE_WORKSPACE_TOKEN
-    value: "YOUR_OTHER_WORKSPACE_PAT_TOKEN_HERE"  # ⚠️ USER: Replace with your actual PAT token
+    value: "dapi5e40d9eb65d1af6c91866e0a35c4"  # ⚠️ TEMP: PAT token for hackathon
   
   # SQL Warehouse ID (for executing queries)
   - name: SQL_WAREHOUSE_ID
