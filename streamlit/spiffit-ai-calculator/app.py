@@ -35,7 +35,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.7.1-SPIFFIT"  # 🔧 Hotfix: Added missing 'time' import
+APP_VERSION = "v3.7.2-SPIFFIT"  # 📋 Improved truncation for competitor intel
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"🎸 Spiffit v{APP_VERSION} - Deployed: {DEPLOYMENT_TIME}")
 
@@ -605,12 +605,27 @@ Show the results sorted by Total MRR descending."""
                 answer = answer.strip()
                 
                 # Truncate the answer to show only intro (prevent auto-scroll)
-                # Find the first 3-4 sentences or first paragraph
-                sentences = answer.split('. ')
-                if len(sentences) > 4:
-                    intro = '. '.join(sentences[:4]) + '.'
+                # Strategy: Show first ~300 chars or first paragraph, whichever is shorter
+                
+                # Try splitting by double newline (paragraph break)
+                paragraphs = answer.split('\n\n')
+                
+                # If first paragraph is short, use it
+                if len(paragraphs) > 1 and len(paragraphs[0]) < 400:
+                    intro = paragraphs[0]
+                    full_detail = answer
+                # Otherwise, use first 300 characters + "..."
+                elif len(answer) > 300:
+                    # Find a good breaking point (end of sentence)
+                    intro = answer[:300]
+                    last_period = intro.rfind('. ')
+                    if last_period > 200:  # Only break at period if it's not too early
+                        intro = intro[:last_period + 1]
+                    else:
+                        intro = intro + "..."
                     full_detail = answer
                 else:
+                    # Short response, show it all
                     intro = answer
                     full_detail = None
                 
