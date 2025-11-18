@@ -279,48 +279,44 @@ Error details: {error_detail}
                         results.append(f"**SQL Query:**\n```sql\n{sql_query}\n```")
                         logger.info(f"✅ Extracted SQL query")
                     
+                    # Check if query has results embedded
+                    has_valid_result = False
                     if hasattr(query_obj, 'result'):
                         result_data = query_obj.result
                         logger.info(f"📊 Query result type: {type(result_data)}")
                         logger.info(f"📊 Query result value: {str(result_data)[:200]}...")
                         
-                        # Check if result_data is None or empty
-                        if result_data is None:
-                            logger.warning("⚠️ Query result is None - attempting to execute SQL query ourselves")
-                            
-                            # Try to execute the SQL query ourselves to get results
-                            if sql_query and hasattr(self, 'workspace'):
-                                logger.info("🔄 Executing SQL query to get results...")
-                                executed_results = self._execute_sql_query(sql_query)
-                                if executed_results:
-                                    results.append(executed_results)
-                                else:
-                                    results.append("**Query Results:** ⚠️ No data returned (query may have failed or table is empty)")
-                            else:
-                                results.append("**Query Results:** ⚠️ No data returned (query may have failed or table is empty)")
-                        elif isinstance(result_data, (list, tuple)):
-                            if len(result_data) > 0:
-                                results.append(f"**Query Results:** {len(result_data)} rows found")
-                                # Format first few rows nicely
-                                results.append("```")
-                                for row in result_data[:10]:  # Show up to 10 rows
-                                    results.append(str(row))
-                                if len(result_data) > 10:
-                                    results.append(f"... and {len(result_data) - 10} more rows")
-                                results.append("```")
-                                logger.info(f"✅ Extracted {len(result_data)} result rows")
-                            else:
-                                logger.warning("⚠️ Query returned 0 rows")
-                                results.append("**Query Results:** 0 rows (table may be empty)")
+                        # Check if result_data has actual data
+                        if isinstance(result_data, (list, tuple)) and len(result_data) > 0:
+                            has_valid_result = True
+                            results.append(f"**Query Results:** {len(result_data)} rows found")
+                            # Format first few rows nicely
+                            results.append("```")
+                            for row in result_data[:10]:  # Show up to 10 rows
+                                results.append(str(row))
+                            if len(result_data) > 10:
+                                results.append(f"... and {len(result_data) - 10} more rows")
+                            results.append("```")
+                            logger.info(f"✅ Extracted {len(result_data)} result rows")
                         elif isinstance(result_data, str) and result_data.strip():
+                            has_valid_result = True
                             results.append(f"**Result:**\n```\n{result_data}\n```")
                             logger.info(f"✅ Extracted string result")
                         else:
-                            logger.warning(f"⚠️ Unexpected result format: {type(result_data)}")
-                            results.append(f"**Result:** {result_data}")
+                            logger.warning(f"⚠️ Result is empty or invalid: {type(result_data)} = {result_data}")
                     else:
                         logger.warning("⚠️ Query object has no 'result' attribute")
                         logger.info(f"📊 Query object attributes: {[a for a in dir(query_obj) if not a.startswith('_')]}")
+                    
+                    # If no valid result from Genie, execute SQL ourselves
+                    if not has_valid_result and sql_query and hasattr(self, 'workspace'):
+                        logger.warning("⚠️ No valid results from Genie - executing SQL query ourselves")
+                        logger.info("🔄 Executing SQL query to get results...")
+                        executed_results = self._execute_sql_query(sql_query)
+                        if executed_results:
+                            results.append(executed_results)
+                        else:
+                            results.append("**Query Results:** ⚠️ No data returned (query may have failed or table is empty)")
                 
                 # Check for text content
                 if hasattr(attachment, 'text') and attachment.text:
@@ -410,7 +406,13 @@ Error details: {error_detail}
                 
         except Exception as e:
             logger.error(f"❌ Error executing SQL query: {str(e)}")
-            return f"**Query Execution Error:** {str(e)}"
+            logger.error(f"❌ Error type: {type(e).__name__}")
+            if "warehouse" in str(e).lower() or "stopped" in str(e).lower():
+                return f"**Query Execution Error:** SQL warehouse may be stopped. Start it in Databricks UI.\n\nError: {str(e)}"
+            elif "permission" in str(e).lower() or "authorized" in str(e).lower():
+                return f"**Query Execution Error:** Permission denied. Check warehouse permissions.\n\nError: {str(e)}"
+            else:
+                return f"**Query Execution Error:** {str(e)}"
     
     def _ask_foundation_model(self, question: str, calculator_results: dict = None):
         """

@@ -30,7 +30,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v2.1.0-SPIFFIT"  # 🎸 "Spiff It" theme + SQL execution
+APP_VERSION = "v2.1.1-SPIFFIT"  # 🎸 Fixed SQL execution trigger + better error handling
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
 logger.info("🎸 When a problem comes along... you must Spiff It! 🎸")

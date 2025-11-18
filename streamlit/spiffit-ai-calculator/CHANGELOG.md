@@ -4,6 +4,37 @@ All notable changes to the Spiffit application.
 
 ---
 
+## [v2.1.1-SPIFFIT] - 2025-11-18
+### 🔧 Critical Fix: SQL Execution Now Actually Triggers!
+**Why:** SQL execution code wasn't being triggered - query showed but no data
+
+**Root Cause:**
+- Code only checked `if result_data is None:`
+- But Genie often returns empty list `[]`, empty dict `{}`, or no `result` attribute
+- So SQL execution never ran!
+
+**Fixed:**
+- ✅ Added `has_valid_result` flag to check for ANY valid data
+- ✅ Only triggers SQL execution if no valid result from Genie
+- ✅ Handles: `None`, empty lists, empty dicts, missing attributes
+- ✅ Better error messages (warehouse stopped, permissions, etc.)
+- ✅ More detailed logging for debugging
+
+**Now you'll see:**
+```
+SQL Query: [shown]
+⚠️ No valid results from Genie - executing SQL query ourselves
+🔄 Executing SQL on warehouse: 0962fa4cf0922125
+Query Results: 5 rows found
+[actual data table here]
+```
+
+**Files Changed:**
+- `ai_helper.py` - Fixed attachment parsing + SQL execution logic
+- `app.py` - Updated version to v2.1.1
+
+---
+
 ## [v2.1.0-SPIFFIT] - 2025-11-18
 ### 🎸 "Spiff It" Theme - When SPIFFs Get Tough!
 **Why:** Hackathon theme song deserves proper branding! Based on Devo's "Whip It"
