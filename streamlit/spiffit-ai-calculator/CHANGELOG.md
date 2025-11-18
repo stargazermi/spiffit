@@ -4,6 +4,266 @@ All notable changes to the Spiffit application.
 
 ---
 
+## [v2.7.2-SPIFFIT] - 2025-11-18
+### 🌐 CRITICAL FIX: Alternate HOST + TOKEN for Cross-Workspace Auth
+**Problem Discovered:**
+```
+❌ Invalid access token. Config: host=https://dbc-4a93b454-f17b.cloud.databricks.com, token=***5c4
+```
+
+**Root Cause:**
+- v2.7.1 only supported alternate TOKEN
+- BUT: Token was used with the WRONG HOST (dlk-hackathon workspace URL)
+- **The Voice Activations Genie is in a DIFFERENT workspace with a DIFFERENT URL!**
+- PAT tokens are workspace-specific and must be used with their workspace's URL
+
+**The Missing Piece:**
+Cross-workspace access requires **BOTH**:
+1. ✅ Alternate workspace URL (host) 
+2. ✅ Alternate PAT token (from that workspace)
+
+**Solution Implemented:**
+- ✅ **Added `alt_workspace_host` parameter** to `IncentiveAI.__init__()`
+- ✅ **New environment variable:** `DATABRICKS_VOICE_WORKSPACE_HOST`
+- ✅ **Enhanced logging:** Shows both alternate host AND token
+- ✅ **Updated initialization:** Voice Activations uses both alt host + alt token
+
+**Technical Changes:**
+
+1. **`ai_helper.py`**
+   - Added `alt_workspace_host` parameter
+   - Uses `alt_workspace_host or os.getenv("DATABRICKS_HOST")`
+   - Enhanced logging to show both workspaces
+   - WorkspaceClient now connects to correct workspace URL
+
+2. **`multi_tool_agent.py`**
+   - Reads `DATABRICKS_VOICE_WORKSPACE_HOST` environment variable
+   - Passes both `alt_workspace_host` and `alt_workspace_token` to Voice Activations Genie
+   - Other Genies unchanged (still use main workspace)
+
+3. **`app.yaml`**
+   - Added `DATABRICKS_VOICE_WORKSPACE_HOST` with placeholder
+   - Updated comments to emphasize BOTH values needed
+   - User must get BOTH host URL and PAT token from data analyst
+
+**Setup Required:**
+1. **Ask data analyst for TWO things:**
+   - Workspace URL where Voice Activations Genie lives (e.g., `https://dbc-xxxxx.cloud.databricks.com`)
+   - PAT token from that workspace
+   
+2. **Update `app.yaml`:**
+   ```yaml
+   - name: DATABRICKS_VOICE_WORKSPACE_HOST
+     value: "https://dbc-xxxxx-yyyy.cloud.databricks.com"  # FROM DATA ANALYST
+   - name: DATABRICKS_VOICE_WORKSPACE_TOKEN
+     value: "dapi_abc123..."  # FROM DATA ANALYST
+   ```
+
+3. **Run test script:**
+   ```powershell
+   .\test-voice-workspace-token.ps1
+   ```
+   This will verify the token works with the workspace URL!
+
+4. **Deploy:**
+   ```powershell
+   .\deploy-to-databricks.ps1
+   ```
+
+**Authentication Flow (Fixed):**
+```
+Voice Activations Genie Query
+  ↓
+Read: DATABRICKS_VOICE_WORKSPACE_HOST + DATABRICKS_VOICE_WORKSPACE_TOKEN
+  ↓
+WorkspaceClient(host=ALT_HOST, token=ALT_TOKEN)  ← FIX!
+  ↓
+Connect to OTHER workspace with correct credentials
+  ↓
+Access Voice Activations Genie ✅
+  ↓
+Return VOIP MRR payouts! 🎉
+```
+
+**What Was Wrong (v2.7.1):**
+```python
+# WRONG: Used alt token with MAIN workspace URL
+host = os.getenv("DATABRICKS_HOST")  # dlk-hackathon URL
+token = alt_workspace_token  # token from OTHER workspace ❌ MISMATCH!
+```
+
+**What's Fixed (v2.7.2):**
+```python
+# RIGHT: Use alt token with ALT workspace URL
+host = alt_workspace_host or os.getenv("DATABRICKS_HOST")  # Other workspace URL ✅
+token = alt_workspace_token or os.getenv("DATABRICKS_TOKEN")  # Matching token ✅
+```
+
+**Logging Output (Fixed):**
+```
+🔄 ALTERNATE WORKSPACE (Cross-workspace access):
+   Host: https://dbc-xxxxx-yyyy.cloud.databricks.com  ← Now shows ALTERNATE host!
+   Token: ✅ SET (***5c4)
+📍 Main workspace settings (overridden):
+   Host: https://dbc-4a93b454-f17b.cloud.databricks.com
+   Token: ***c2f
+```
+
+**Files Modified:**
+- `ai_helper.py` - Added `alt_workspace_host` parameter
+- `multi_tool_agent.py` - Reads and passes `DATABRICKS_VOICE_WORKSPACE_HOST`
+- `app.yaml` - Added `DATABRICKS_VOICE_WORKSPACE_HOST` env var
+- `test-voice-workspace-token.ps1` - NEW: Test script to verify credentials
+- `CHANGELOG.md` - This entry
+
+**Testing:**
+1. Run `test-voice-workspace-token.ps1` to verify token + host combo
+2. Check Troubleshooting tab logs after deployment
+3. Should see "Alternate Host: https://dbc-xxxxx..." (not dlk-hackathon!)
+4. Voice Activations button should work! ✅
+
+**Key Lesson:**
+🎯 **Cross-workspace access requires BOTH workspace URL AND token from that workspace!**
+
+---
+
+## [v2.7.1-SPIFFIT] - 2025-11-18
+### 🔐 Separate PAT Token for Cross-Workspace Authentication
+**Why:** Voice Activations Genie is in another workspace. PAT tokens are workspace-specific, so the main dlk-hackathon PAT can't access it.
+
+**Problem Encountered:**
+```
+❌ You need "Can View" permission to perform this action
+```
+Even though user had "Can Edit" permissions in the Genie UI, the PAT token from dlk-hackathon workspace couldn't access Genies in the other workspace.
+
+**Solution:**
+- ✅ **Separate PAT token support** for cross-workspace Genie access
+- ✅ **New environment variable:** `DATABRICKS_VOICE_WORKSPACE_TOKEN`
+- ✅ **Automatic token selection:** Voice Activations uses alternate token, other Genies use main token
+- ✅ **Enhanced logging:** Shows which token is being used (cross-workspace vs. main)
+
+**Technical Implementation:**
+1. **`ai_helper.py`** - Added `alt_workspace_token` parameter to `IncentiveAI.__init__()`
+   - Accepts optional alternate token for cross-workspace auth
+   - Uses alt token if provided, falls back to `DATABRICKS_TOKEN`
+   - Logs which token is active: "PAT Token (Cross-Workspace)" vs "PAT Token"
+   
+2. **`multi_tool_agent.py`** - Voice Activations Genie initialization
+   - Reads `DATABRICKS_VOICE_WORKSPACE_TOKEN` from environment
+   - Passes it as `alt_workspace_token` to Voice Activations Genie
+   - Other Genies (Sales, Analytics, Market) use main token
+   
+3. **`app.yaml`** - Added new environment variable
+   - `DATABRICKS_VOICE_WORKSPACE_TOKEN` with placeholder value
+   - Documented as cross-workspace token with comments
+   - User must replace with PAT from the other workspace
+
+**Setup Required:**
+1. Generate PAT token from the **other workspace** (where Voice Activations Genie lives)
+2. Update `app.yaml`: Replace `YOUR_OTHER_WORKSPACE_PAT_TOKEN_HERE` with actual token
+3. Deploy app
+4. Voice Activations button should now work! ✅
+
+**Authentication Flow:**
+```
+Voice Activations Genie
+  ↓
+Check: DATABRICKS_VOICE_WORKSPACE_TOKEN set?
+  ↓ YES
+Use alternate token → Access other workspace → Success!
+```
+
+**Logging Output:**
+```
+🔄 ALT_WORKSPACE_TOKEN: ✅ SET (***5c4) - Cross-workspace auth!
+Auth Method: PAT Token (Cross-Workspace)
+```
+
+**Files Modified:**
+- `ai_helper.py` - Added `alt_workspace_token` param, updated logging
+- `multi_tool_agent.py` - Voice Activations uses `DATABRICKS_VOICE_WORKSPACE_TOKEN`
+- `app.yaml` - Added new environment variable
+- `CROSS_WORKSPACE_AUTH_SETUP.md` - Complete setup guide
+- `CHANGELOG.md` - This entry
+
+**Benefits:**
+- 🔐 **Secure:** Each workspace uses its own PAT token
+- 🎯 **Targeted:** Only Voice Activations uses alternate token
+- 📊 **Transparent:** Logs show which auth is active
+- 🚀 **Flexible:** Can add more cross-workspace Genies easily
+
+**Troubleshooting:**
+- See `CROSS_WORKSPACE_AUTH_SETUP.md` for detailed setup steps
+- Check Troubleshooting tab logs for authentication details
+- Verify PAT token is from the **correct workspace**
+
+---
+
+## [v2.7.0-SPIFFIT] - 2025-11-18
+### 📞 Cross-Workspace Genie Support (Voice Activations)
+**Why:** Data analyst is fine-tuning a Voice Activations incentive calculator in another workspace. Need to test it before migrating to hackathon workspace.
+
+**Added:**
+- ✅ **4th Genie Space** - Voice Activations (cross-workspace access!)
+  - Space ID: `01f0c3e4c6751989828598c96ee0debf`
+  - Located in different workspace (being fine-tuned by data analyst)
+  - Will be migrated to dlk-hackathon workspace later
+- ✅ **New Test Button** - "🎤 Voice Incentive Calc"
+  - Sidebar section: "📞 Voice Activations (Cross-Workspace)"
+  - Sends detailed prompt about VOIP MRR calculations
+  - Includes full Voice Activations Incentive rules
+- ✅ **Updated Multi-Agent Routing**
+  - Added Voice Activations to tool routing logic
+  - Routes VOIP/MRR/incentive questions to new Genie
+  - Shows "Voice Activations*" in Genies Called list
+- ✅ **Environment Variable**: `GENIE_VOICE_ACTIVATIONS_SPACE_ID`
+  - Added to `app.yaml` for deployment
+  - Documented as cross-workspace in comments
+
+**Voice Incentive Calculation Prompt:**
+```
+Return opportunity owner, sum MRR, and group by opportunity owner.
+Calculate incentive payout based on:
+
+Voice Activations Incentive: (Payout Min. $250 MRR = $300 | $1000+ MRR = $1000)
+• Designed to encourage incremental VOIP sales
+• Based on Opportunity Level
+• Applies to NEW Incremental VOIP MRR only (Renewals excluded)
+• Includes: New Logo, Customers without Voice, Incremental VOIP lines
+• Excludes: Renewals, swaps without revenue gain
+```
+
+**How It Works:**
+1. User clicks "🎤 Voice Incentive Calc" button
+2. App sends formatted prompt to Voice Activations Genie (in other workspace)
+3. Genie calculates payouts based on complex rules
+4. Results shown in clean demo format
+
+**Technical Details:**
+- Uses same authentication (PAT token works across workspaces)
+- Added `genie_voice_activations_id` parameter to `MultiToolAgent`
+- Tool description: "Voice Activations incentive calculations - VOIP MRR, opportunity owner payouts"
+- Updated routing prompt to include Voice Activations keywords
+- Sidebar updated: "4 Genie Spaces (1 cross-workspace)"
+
+**Benefits:**
+- 🧪 **Test before migration** - Validate data analyst's work
+- 🔄 **Seamless access** - No special setup needed
+- 📊 **Complex calculations** - Handles nuanced VOIP incentive rules
+- 🎯 **Demo ready** - Show cross-workspace capabilities!
+
+**Files Modified:**
+- `app.py` - Added button, updated init, sidebar captions
+- `app.yaml` - Added `GENIE_VOICE_ACTIVATIONS_SPACE_ID`
+- `multi_tool_agent.py` - Added 4th Genie space support
+- `CHANGELOG.md` - This entry
+
+**Demo Talk Track:**
+> "We even support **cross-workspace Genie access**! Our data analyst is fine-tuning a Voice Activations incentive calculator in another workspace, and we can test it seamlessly from here. This shows how flexible our multi-agent architecture is!"
+
+---
+
 ## [v2.6.0-SPIFFIT] - 2025-11-18
 ### 🤖 Expanded Orchestrator Model Options
 **Why:** The hardcoded list had only 4 models (some didn't exist), but workspace has 21 serving endpoints!
