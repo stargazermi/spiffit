@@ -31,7 +31,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v2.4.1-SPIFFIT"  # 🎸 Fixed lyrics: "you must Spiff It" (not "gotta")
+APP_VERSION = "v2.5.1-SPIFFIT"  # 📧 Copy for Email + 📎 CSV Download
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
 logger.info("🎸 When a problem comes along... you must Spiff It! 🎸")
@@ -42,6 +42,88 @@ st.set_page_config(
     page_icon="⚡",
     layout="wide"
 )
+
+# Helper function to format data for email
+def format_for_email(answer_text):
+    """
+    Format query results for email copying
+    Returns (is_copyable, formatted_text, csv_data, headers, data_rows) tuple
+    """
+    # Detect if this looks like winner/SPIFF data
+    keywords = ['winner', 'spiff', 'earned', 'employee', 'november', 'october', 'september', 'month']
+    has_data_keywords = any(keyword in answer_text.lower() for keyword in keywords)
+    has_table = '|' in answer_text and '---' in answer_text
+    
+    if not (has_data_keywords and has_table):
+        return False, None, None, None, None
+    
+    # Extract table from markdown
+    lines = answer_text.split('\n')
+    table_lines = []
+    in_table = False
+    
+    for line in lines:
+        if '|' in line:
+            in_table = True
+            table_lines.append(line)
+        elif in_table and line.strip() == '':
+            break  # End of table
+    
+    if len(table_lines) < 3:  # Need at least header, separator, and one data row
+        return False, None, None, None, None
+    
+    # Parse table
+    header_line = table_lines[0].strip('|').strip()
+    headers = [h.strip() for h in header_line.split('|')]
+    
+    # Skip separator line (---), get data rows
+    data_rows = []
+    for line in table_lines[2:]:  # Skip header and separator
+        if '---' not in line and '|' in line:
+            row = line.strip('|').strip()
+            cells = [c.strip() for c in row.split('|')]
+            if cells and cells[0]:  # Has data
+                data_rows.append(cells)
+    
+    if not data_rows:
+        return False, None, None, None, None
+    
+    # Format for email (text)
+    email_lines = []
+    email_lines.append("SPIFF Winners")
+    email_lines.append("=" * 60)
+    email_lines.append("")
+    
+    # Determine column widths
+    col_widths = [max(len(h), 15) for h in headers]
+    for row in data_rows:
+        for i, cell in enumerate(row):
+            if i < len(col_widths):
+                col_widths[i] = max(col_widths[i], len(str(cell)))
+    
+    # Format header
+    header_formatted = "  ".join([h.ljust(col_widths[i]) for i, h in enumerate(headers)])
+    email_lines.append(header_formatted)
+    email_lines.append("-" * len(header_formatted))
+    
+    # Format data rows
+    for row in data_rows:
+        row_formatted = "  ".join([str(cell).ljust(col_widths[i]) for i, cell in enumerate(row) if i < len(col_widths)])
+        email_lines.append(row_formatted)
+    
+    email_lines.append("")
+    email_lines.append(f"Total: {len(data_rows)} recipients")
+    
+    email_text = "\n".join(email_lines)
+    
+    # Create CSV format for download
+    csv_lines = []
+    csv_lines.append(",".join([f'"{h}"' for h in headers]))  # CSV header
+    for row in data_rows:
+        csv_lines.append(",".join([f'"{cell}"' for cell in row]))  # CSV rows
+    csv_data = "\n".join(csv_lines)
+    
+    return True, email_text, csv_data, headers, data_rows
 
 # Initialize AI components
 @st.cache_resource
@@ -187,6 +269,25 @@ I'm your AI-powered SPIFF intelligence agent. I can help you:
     for message in st.session_state.chat_messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
+            
+            # Show copy button for assistant messages with data
+            if message["role"] == "assistant":
+                is_copyable, email_format, csv_data, headers, data_rows = format_for_email(message["content"])
+                if is_copyable and email_format:
+                    col1, col2 = st.columns([3, 1])
+                    with col1:
+                        with st.expander("📧 Copy for Email", expanded=False):
+                            st.caption("Click the copy button on the right →")
+                            st.code(email_format, language=None)
+                    with col2:
+                        st.download_button(
+                            label="📎 Download CSV",
+                            data=csv_data,
+                            file_name=f"spiff_winners_{datetime.now().strftime('%Y%m%d')}.csv",
+                            mime="text/csv",
+                            help="Download data as CSV to attach to email",
+                            key=f"download_{hash(message['content'])}"
+                        )
     
     # Chat input (check for programmatic input from sidebar first)
     if st.session_state.chat_input_from_button:
@@ -223,6 +324,26 @@ I'm your AI-powered SPIFF intelligence agent. I can help you:
                 
                 # Display clean answer
                 st.markdown(answer)
+                
+                # Check if this is copyable data (winners, SPIFFs, etc.)
+                is_copyable, email_format, csv_data, headers, data_rows = format_for_email(answer)
+                if is_copyable and email_format:
+                    st.markdown("---")
+                    col1, col2 = st.columns([3, 1])
+                    with col1:
+                        with st.expander("📧 Copy for Email", expanded=False):
+                            st.caption("Click the copy button on the right to copy this formatted text →")
+                            st.code(email_format, language=None)
+                            st.caption("💡 Paste directly into your email - formatting preserved!")
+                    with col2:
+                        st.download_button(
+                            label="📎 Download CSV",
+                            data=csv_data,
+                            file_name=f"spiff_winners_{datetime.now().strftime('%Y%m%d')}.csv",
+                            mime="text/csv",
+                            help="Download data as CSV to attach to email",
+                            key=f"download_new_{datetime.now().timestamp()}"
+                        )
                 
                 # Add subtle performance indicator
                 if elapsed > 15:
@@ -279,6 +400,25 @@ I can intelligently route your questions across:
             if message["role"] == "assistant" and "tool_details" in message:
                 with st.expander("🔧 Tools & Routing Details"):
                     st.json(message["tool_details"])
+            
+            # Show copy/download for assistant messages with data
+            if message["role"] == "assistant":
+                is_copyable, email_format, csv_data, headers, data_rows = format_for_email(message["content"])
+                if is_copyable and email_format:
+                    col1, col2 = st.columns([3, 1])
+                    with col1:
+                        with st.expander("📧 Copy for Email", expanded=False):
+                            st.caption("Click the copy button on the right →")
+                            st.code(email_format, language=None)
+                    with col2:
+                        st.download_button(
+                            label="📎 Download CSV",
+                            data=csv_data,
+                            file_name=f"spiff_winners_{datetime.now().strftime('%Y%m%d')}.csv",
+                            mime="text/csv",
+                            help="Download data as CSV to attach to email",
+                            key=f"intel_download_{hash(message['content'])}"
+                        )
     
     # Chat input (check for programmatic input from sidebar first)
     if st.session_state.intelligence_input:

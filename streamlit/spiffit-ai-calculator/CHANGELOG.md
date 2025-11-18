@@ -4,6 +4,112 @@ All notable changes to the Spiffit application.
 
 ---
 
+## [v2.5.1-SPIFFIT] - 2025-11-18
+### 📎 CSV Download for Email Attachments
+**Why:** Users need to attach raw data files to emails, not just copy formatted text
+
+**Added:**
+- ✅ **"📎 Download CSV" button** - Download winner data as CSV file for email attachment
+  - Appears next to "Copy for Email" expander
+  - Auto-generated filename: `spiff_winners_YYYYMMDD.csv`
+  - CSV format with headers and quoted fields
+  - Ready to attach to Outlook/Gmail/etc.
+- ✅ **Enhanced `format_for_email()` function**
+  - Now returns 5 values: `(is_copyable, email_text, csv_data, headers, data_rows)`
+  - Creates CSV format alongside text format
+  - Proper CSV escaping with quoted fields
+- ✅ **Available in both tabs:**
+  - Chat tab (clean demo view)
+  - Intelligence tab (debug view)
+- ✅ **Shows in chat history** - Past responses with data also get download button
+
+**User Flow:**
+1. Ask: "Who won the last SPIFF competition?"
+2. See results in nice table
+3. **Option A:** Click "📧 Copy for Email" → Copy text → Paste in email body
+4. **Option B:** Click "📎 Download CSV" → Attach to email as file
+5. Send notification email with data! ✅
+
+**Technical Details:**
+- CSV generation: comma-separated with double-quote escaping
+- Unique download button keys using message content hash or timestamp
+- Date-stamped filenames for organization
+
+**Files Modified:**
+- `app.py` - Enhanced `format_for_email()`, added download buttons in Chat & Intelligence tabs
+
+---
+
+## [v2.5.0-SPIFFIT] - 2025-11-18
+### 📧 Copy for Email Feature
+**Why:** Users need to easily copy winner data to paste into emails for notifications
+
+**Added:**
+- ✅ **"Copy for Email" button** - Automatically detects SPIFF winner/monthly data
+  - Appears as expandable section below answers with winner data
+  - One-click copy with st.code() copy button
+  - Formats data in clean, email-friendly text (not markdown tables)
+- ✅ **Smart detection** - Looks for keywords: winner, SPIFF, earned, employee, month names
+- ✅ **Formatted output** includes:
+  - Title: "SPIFF Winners"
+  - Properly aligned columns
+  - Total recipient count
+  - Easy to paste directly into Outlook/Gmail
+- ✅ **Shows in chat history** - Past responses with data also get the copy button
+
+**Technical Details:**
+- New helper function: `format_for_email(answer_text)`
+- Parses markdown tables and converts to fixed-width text format
+- Auto-calculates column widths for proper alignment
+- Returns tuple: `(is_copyable: bool, formatted_text: str)`
+
+**User Flow:**
+1. Ask: "Who won the last SPIFF competition?"
+2. See results in nice table
+3. Click "📧 Copy for Email" expander
+4. Click copy button (top right of code block)
+5. Paste directly into email - ready to send! ✅
+
+**Files Modified:**
+- `app.py` - Added `format_for_email()` helper and copy buttons in Chat tab
+
+---
+
+## [v2.4.1-SPIFFIT] - 2025-11-18
+### 🎸 Lyrics Correction
+**Why:** Get the theme song lyrics right! It's "you must Spiff It" (like "Whip It")
+
+**Changed:**
+- ✅ Fixed all instances of "you gotta" → "you must" (8 files updated)
+- ✅ App title: "When SPIFFs Get Tough, You Must Spiff It!"
+- ✅ Updated README, CHANGELOG, release notes, and demo scripts
+
+**Files Modified:**
+- `app.py`, `README.md`, `SPIFF_IT_THEME.md`, `V2.2.0_RELEASE_NOTES.md`, `SQL_EXECUTION_FIX.md`, `CHANGELOG.md`
+
+---
+
+## [v2.4.0-SPIFFIT] - 2025-11-18
+### 🔧 Individual Genie Test Buttons + Improved Routing
+**Why:** Need to verify each Genie space individually and ensure all 3 are called for comprehensive queries
+
+**Added:**
+- ✅ **Test Individual Genies** section in sidebar
+  - 📊 Sales Genie button
+  - 📈 Analytics Genie button
+  - 🌐 Market Genie button
+- ✅ **Improved routing logic** in `multi_tool_agent.py`
+  - More aggressive about calling all 3 Genies
+  - Added instruction: "prefer calling multiple" tools
+  - New example showing all 4 tools for strategic questions
+  - Clearer tool descriptions (sales vs analytics vs market)
+
+**Files Modified:**
+- `app.py` - Added test buttons in sidebar
+- `multi_tool_agent.py` - Enhanced routing prompt
+
+---
+
 ## [v2.3.1-SPIFFIT] - 2025-11-18
 ### 📊 Table Formatting for Query Results
 **Why:** Raw Python lists like `['Sarah Johnson', '57730.00']` look unprofessional
