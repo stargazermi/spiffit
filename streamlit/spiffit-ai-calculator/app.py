@@ -30,7 +30,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v2.2.1-SPIFFIT"  # 🎸 Removed "Use Genie" checkbox, clarified Foundation Model as orchestrator
+APP_VERSION = "v2.2.2-SPIFFIT"  # 🐛 Fixed indentation errors in web_search_tool.py
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
 logger.info("🎸 When a problem comes along... you must Spiff It! 🎸")

@@ -93,8 +93,7 @@ class CompetitorSearchTool:
                         "Dedicated Internet Access: Custom pricing for enterprise"
                     ]
                 },
-                    "focus": "5G deployments, retention"
-                }
+                "focus": "5G deployments, retention"
             },
             "T-Mobile": {
                 "q4_2024": {

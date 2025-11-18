@@ -4,6 +4,21 @@ All notable changes to the Spiffit application.
 
 ---
 
+## [v2.2.2-SPIFFIT] - 2025-11-18
+### 🐛 Critical Bugfix
+**Why:** Deployment failed due to syntax errors in web_search_tool.py
+
+**Fixed:**
+- ✅ **IndentationError at line 69** - Fixed "Spectrum" dictionary structure (removed extra closing brace, corrected "focus" indentation)
+- ✅ **IndentationError at line 99** - Fixed "T-Mobile" dictionary structure (same issue with Verizon section)
+
+**Files Modified:**
+- `web_search_tool.py` - Fixed mock_competitor_data dictionary structure
+
+**Root Cause:** When adding business_offers to the mock data, the "focus" key was incorrectly nested with an extra closing brace, causing Python to expect improper indentation for the next competitor.
+
+---
+
 ## [v2.2.1-SPIFFIT] - 2025-11-18
 ### 🎛️ UI Simplification
 **Why:** Remove confusing "Use Genie" checkbox, clarify Foundation Model purpose
