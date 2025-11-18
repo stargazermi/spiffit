@@ -128,25 +128,55 @@ class IncentiveAI:
             # Extract the response from conversation
             # The conversation object may have different attributes depending on the response
             if hasattr(conversation, 'messages') and conversation.messages:
-                # Get the last message (Genie's response)
                 logger.info(f"📨 Found {len(conversation.messages)} messages")
-                last_message = conversation.messages[-1]
-                logger.info(f"📨 Last message has content: {hasattr(last_message, 'content')}")
-                logger.info(f"📨 Last message has text: {hasattr(last_message, 'text')}")
-                logger.info(f"📨 Last message has attachments: {hasattr(last_message, 'attachments')}")
                 
+                # CRITICAL: Filter out user messages, only get assistant (Genie) messages
+                assistant_messages = [msg for msg in conversation.messages if hasattr(msg, 'role') and msg.role == 'ASSISTANT']
+                user_messages = [msg for msg in conversation.messages if hasattr(msg, 'role') and msg.role == 'USER']
+                
+                logger.info(f"📨 User messages: {len(user_messages)}, Assistant messages: {len(assistant_messages)}")
+                
+                # Get the last ASSISTANT message (Genie's actual response)
+                if assistant_messages:
+                    last_message = assistant_messages[-1]
+                    logger.info(f"📨 Using last assistant message")
+                else:
+                    # Fallback: use last message regardless
+                    last_message = conversation.messages[-1]
+                    logger.info(f"📨 No assistant messages found, using last message (might be user message!)")
+                
+                logger.info(f"📨 Message role: {getattr(last_message, 'role', 'UNKNOWN')}")
+                logger.info(f"📨 Message has content: {hasattr(last_message, 'content')}")
+                logger.info(f"📨 Message has text: {hasattr(last_message, 'text')}")
+                logger.info(f"📨 Message has attachments: {hasattr(last_message, 'attachments')}")
+                
+                # Try to extract response
                 if hasattr(last_message, 'content') and last_message.content:
-                    logger.info(f"✅ Extracted content ({len(str(last_message.content))} chars)")
-                    return last_message.content
+                    content = str(last_message.content)
+                    logger.info(f"✅ Extracted content ({len(content)} chars): {content[:100]}...")
+                    
+                    # Double-check it's not just the question echoed back
+                    if content.strip() == question.strip():
+                        logger.warning("⚠️ Content is the same as the question! Looking for attachments...")
+                        if hasattr(last_message, 'attachments') and last_message.attachments:
+                            return self._format_genie_attachments(last_message.attachments)
+                        else:
+                            return f"Genie returned the question without an answer. The space may have no data or the query failed."
+                    
+                    return content
+                    
                 elif hasattr(last_message, 'text') and last_message.text:
-                    logger.info(f"✅ Extracted text ({len(str(last_message.text))} chars)")
-                    return last_message.text
+                    text = str(last_message.text)
+                    logger.info(f"✅ Extracted text ({len(text)} chars): {text[:100]}...")
+                    return text
+                    
                 elif hasattr(last_message, 'attachments') and last_message.attachments:
                     logger.info(f"📎 Processing {len(last_message.attachments)} attachments")
                     return self._format_genie_attachments(last_message.attachments)
+                    
                 else:
-                    logger.warning("⚠️ Last message has no extractable content")
-                    return f"Message format unexpected: {str(last_message)}"
+                    logger.warning("⚠️ Message has no extractable content, text, or attachments")
+                    return f"Message format unexpected: {str(last_message)[:200]}"
             
             elif hasattr(conversation, 'content') and conversation.content:
                 logger.info(f"✅ Extracted conversation content")
@@ -198,15 +228,56 @@ Error details: {error_detail}
     def _format_genie_attachments(self, attachments):
         """Format Genie query results from attachments"""
         try:
+            logger.info(f"📎 Formatting {len(attachments)} attachments")
             results = []
-            for attachment in attachments:
-                if hasattr(attachment, 'query') and hasattr(attachment.query, 'query'):
-                    results.append(f"**Query:** {attachment.query.query}")
-                if hasattr(attachment, 'query') and hasattr(attachment.query, 'result'):
-                    results.append(f"**Result:** {attachment.query.result}")
-            return "\n\n".join(results) if results else str(attachments)
+            
+            for i, attachment in enumerate(attachments):
+                logger.info(f"📎 Attachment {i+1} type: {type(attachment)}")
+                logger.info(f"📎 Attachment {i+1} attributes: {dir(attachment)}")
+                
+                # Try different ways to extract data
+                if hasattr(attachment, 'query'):
+                    query_obj = attachment.query
+                    logger.info(f"📊 Found query object: {type(query_obj)}")
+                    
+                    if hasattr(query_obj, 'query'):
+                        results.append(f"**SQL Query:**\n```sql\n{query_obj.query}\n```")
+                        logger.info(f"✅ Extracted SQL query")
+                    
+                    if hasattr(query_obj, 'result'):
+                        result_data = query_obj.result
+                        logger.info(f"📊 Query result type: {type(result_data)}")
+                        
+                        # Try to format result nicely
+                        if isinstance(result_data, (list, tuple)) and len(result_data) > 0:
+                            results.append(f"**Query Results:** {len(result_data)} rows")
+                            # Show first few rows
+                            results.append(f"```\n{str(result_data[:5])}\n```")
+                        else:
+                            results.append(f"**Result:**\n```\n{result_data}\n```")
+                        logger.info(f"✅ Extracted query results")
+                
+                # Check for text content
+                if hasattr(attachment, 'text') and attachment.text:
+                    results.append(f"**Text:** {attachment.text}")
+                    logger.info(f"✅ Extracted attachment text")
+                
+                # Check for content
+                if hasattr(attachment, 'content') and attachment.content:
+                    results.append(f"**Content:** {attachment.content}")
+                    logger.info(f"✅ Extracted attachment content")
+            
+            if results:
+                formatted = "\n\n".join(results)
+                logger.info(f"✅ Successfully formatted attachments ({len(formatted)} chars)")
+                return formatted
+            else:
+                logger.warning(f"⚠️ No data extracted from attachments, returning raw")
+                return f"Genie returned attachments but couldn't parse them:\n```\n{str(attachments)[:500]}\n```"
+                
         except Exception as e:
-            return f"Genie returned data but couldn't format: {str(attachments)}"
+            logger.error(f"❌ Error formatting attachments: {str(e)}")
+            return f"Genie returned data but couldn't format it: {str(e)}\n\nRaw: {str(attachments)[:300]}"
     
     def _ask_foundation_model(self, question: str, calculator_results: dict = None):
         """

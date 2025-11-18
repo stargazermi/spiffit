@@ -30,7 +30,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v2.0.1-DEMO"  # Fixed response parsing & added debug logging
+APP_VERSION = "v2.0.2-DEMO"  # CRITICAL FIX: Extract ASSISTANT messages, not USER
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
 
