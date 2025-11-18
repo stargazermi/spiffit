@@ -410,17 +410,27 @@ with tab3:
         except Exception as e:
             st.error(f"❌ Connection failed: {str(e)}")
     
-    if st.button("Test Genie Query"):
-        if st.session_state.ai.genie_space_id:
-            try:
-                response = st.session_state.ai.ask_question("Show me the top performers")
-                st.success("✅ Genie query successful!")
-                with st.expander("Response"):
-                    st.write(response)
-            except Exception as e:
-                st.error(f"❌ Genie query failed: {str(e)}")
-        else:
-            st.warning("⚠️ Genie Space ID not configured. Cannot test Genie query.")
+    # Test Genie Query Section
+    test_col1, test_col2 = st.columns([1, 3])
+    with test_col1:
+        test_genie = st.button("Test Genie Query", key="test_genie_btn", use_container_width=True)
+    
+    # Display results in a persistent container
+    test_results = st.container()
+    
+    if test_genie:
+        with test_results:
+            if st.session_state.ai.genie_space_id:
+                with st.spinner("Testing Genie connection..."):
+                    try:
+                        response = st.session_state.ai.ask_question("Show me the top performers")
+                        st.success("✅ Genie query successful!")
+                        st.markdown("**📄 Response:**")
+                        st.info(response)
+                    except Exception as e:
+                        st.error(f"❌ Genie query failed: {str(e)}")
+            else:
+                st.warning("⚠️ Genie Space ID not configured. Cannot test Genie query.")
 
 # Footer
 st.markdown("---")
