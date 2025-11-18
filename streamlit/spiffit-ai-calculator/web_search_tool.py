@@ -39,6 +39,15 @@ class CompetitorSearchTool:
         
         self.model_name = model_name
         
+        # Priority competitor business internet pages (from supportingAlternate.md)
+        self.competitor_targets = {
+            "AT&T Business": "https://business.att.com",
+            "Spectrum Business": "https://business.spectrum.com",
+            "Comcast Business": "https://business.comcast.com",
+            "Verizon Business": "https://www.verizon.com/business",
+            "Cox Business": "https://www.cox.com/business"
+        }
+        
         # Mock competitor data for demo (replace with real API in production)
         self.mock_competitor_data = {
             "AT&T": {
@@ -48,8 +57,29 @@ class CompetitorSearchTool:
                         "New Logo Push: Triple commission on new enterprise customers",
                         "Year-End Accelerator: 150% payout for Q4 quota achievement"
                     ],
+                    "business_offers": [
+                        "Business Fiber 300: $199.99/mo (promo 12 months)",
+                        "Business Internet 500: $249.99/mo with 99.99% SLA",
+                        "Dedicated Internet: Contact for enterprise pricing"
+                    ]
+                },
                     "focus": "Enterprise deals, new customer acquisition"
                 }
+            },
+            "Spectrum": {
+                "q4_2024": {
+                    "programs": [
+                        "Winter Blitz: $15K bonus on MDU/bulk deals",
+                        "Fiber Expansion Rewards: 2x comm on new fiber markets",
+                        "Q4 Sweep: Top 10 reps win Hawaii trip"
+                    ],
+                    "business_offers": [
+                        "Business Internet 500: $249.99/mo (promo 24 months)",
+                        "Business Internet Gig: $299.99/mo with 99.9% uptime guarantee",
+                        "Managed WiFi: Add $50/mo to any plan"
+                    ]
+                },
+                "focus": "Bulk properties, small business expansion"
             },
             "Verizon": {
                 "q4_2024": {
@@ -58,6 +88,12 @@ class CompetitorSearchTool:
                         "Retention Champion: Double commission on renewals > $100K",
                         "End of Year Sprint: 200% commission last 2 weeks of December"
                     ],
+                    "business_offers": [
+                        "Business Fios Gigabit: $349.99/mo (promo 12 months)",
+                        "Business Internet 500/500: $299.99/mo with 99.99% reliability",
+                        "Dedicated Internet Access: Custom pricing for enterprise"
+                    ]
+                },
                     "focus": "5G deployments, retention"
                 }
             },

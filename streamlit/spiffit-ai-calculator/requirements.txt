@@ -13,6 +13,11 @@ databricks-sdk>=0.12.0
 # Environment variable management
 python-dotenv>=1.0.0
 
+# Web scraping for competitor intelligence
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+
 # For Delta Lake access (when you connect the calculator)
 # pyspark>=3.4.0
 

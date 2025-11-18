@@ -30,7 +30,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v2.1.2-SPIFFIT"  # 🎸 Fixed 'ResultData not callable' error
+APP_VERSION = "v2.2.0-SPIFFIT"  # 🎸 Competitor schema + scraper + Chat tab
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
 logger.info("🎸 When a problem comes along... you must Spiff It! 🎸")
@@ -97,8 +97,8 @@ st.title("⚡ Spiffit - When SPIFFs Get Tough, You Gotta Spiff It!")
 st.markdown("### 🎸 *Spiff it good!* - AI-powered sales incentive intelligence")
 st.caption("💪 Powered by multi-agent AI + Databricks Genie + 100% pure hackathon energy!")
 
-# Create tabs for intelligence, architecture, and troubleshooting
-tab1, tab2, tab3 = st.tabs(["🧠 Intelligence", "📐 Architecture & Tech Stack", "🔧 Troubleshooting"])
+# Create tabs: Chat (demo), Intelligence (debug), Architecture, Troubleshooting
+tab1, tab2, tab3, tab4 = st.tabs(["💬 Chat", "🧠 Intelligence", "📐 Architecture & Tech Stack", "🔧 Troubleshooting"])
 
 # Sidebar with configuration and examples
 with st.sidebar:
@@ -148,10 +148,77 @@ with st.sidebar:
     if st.button("🎯 Spiff it GOOD!", use_container_width=True, key="ex6"):
         st.session_state.intelligence_input = "Should we increase our SPIFF budget? Consider sales performance, leaderboards, and what competitors are doing."
 
-# Tab 1: Intelligence (Multi-Agent)
+# Tab 1: Chat (Clean Demo View)
 with tab1:
-    st.header("⚡ Intelligence - Spiff It Good!")
-    st.caption("🎸 Multi-agent AI + Genie spaces + web search = Sales intelligence that rocks!")
+    st.header("💬 Spiffit Chat")
+    st.caption("⚡ Clean demo interface - just you and the AI agent")
+    
+    # Initialize chat history (separate from intelligence tab)
+    if "chat_messages" not in st.session_state:
+        st.session_state.chat_messages = []
+        st.session_state.chat_messages.append({
+            "role": "assistant",
+            "content": """👋 **Welcome to Spiffit!**
+            
+I'm your AI-powered SPIFF intelligence agent. I can help you:
+- 📊 Analyze sales performance and incentives
+- 🏆 Track SPIFF winners and leaderboards
+- 🔍 Research competitor offers and programs
+- 💡 Get strategic recommendations
+
+**Try the examples in the sidebar →** or ask me anything!
+"""
+        })
+    
+    # Display chat history (CLEAN - no debug info)
+    for message in st.session_state.chat_messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+    
+    # Chat input
+    chat_prompt = st.chat_input("Ask anything about SPIFFs, sales, or competitors...", key="chat_input")
+    
+    if chat_prompt:
+        # Add user message
+        st.session_state.chat_messages.append({"role": "user", "content": chat_prompt})
+        with st.chat_message("user"):
+            st.markdown(chat_prompt)
+        
+        # Process with multi-tool agent
+        with st.chat_message("assistant"):
+            try:
+                with st.spinner("🤔 Thinking..."):
+                    import time
+                    start_time = time.time()
+                    result = st.session_state.multi_agent.query(chat_prompt)
+                    elapsed = time.time() - start_time
+                
+                # Display ONLY the answer (clean for demo)
+                st.markdown(result["answer"])
+                
+                # Add subtle performance indicator
+                if elapsed > 15:
+                    st.caption(f"_Response time: {elapsed:.1f}s_")
+                
+                # Save response (clean - no metadata)
+                st.session_state.chat_messages.append({
+                    "role": "assistant",
+                    "content": result["answer"]
+                })
+                
+            except Exception as e:
+                error_msg = f"❌ Error: {str(e)}"
+                st.error(error_msg)
+                st.caption("💡 Check the Intelligence tab for debugging details")
+                st.session_state.chat_messages.append({
+                    "role": "assistant",
+                    "content": error_msg
+                })
+
+# Tab 2: Intelligence (Debug View)
+with tab2:
+    st.header("🧠 Intelligence - Debug Mode")
+    st.caption("🔧 See how the AI agent thinks and routes queries (for development/troubleshooting)")
     
     # Initialize intelligence chat history
     if "intelligence_messages" not in st.session_state:
@@ -281,8 +348,8 @@ I can intelligently route your questions across:
                     "content": error_msg
                 })
 
-# Tab 2: Architecture & Tech Stack
-with tab2:
+# Tab 3: Architecture & Tech Stack
+with tab3:
     st.header("📐 Architecture & Tech Stack")
     st.caption("Multi-agent system architecture powered by Databricks")
     
@@ -512,8 +579,8 @@ To see which Genie spaces are actually being called in Databricks:
 💡 **Pro Tip:** The **Intelligence tab** above shows which Genies were called directly in the UI!
 """)
 
-# Tab 3: Troubleshooting & Environment
-with tab3:
+# Tab 4: Troubleshooting & Environment
+with tab4:
     st.header("🔧 Troubleshooting & Environment Info")
     
     # Version and Deployment Info

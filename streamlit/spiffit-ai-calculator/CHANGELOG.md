@@ -4,6 +4,68 @@ All notable changes to the Spiffit application.
 
 ---
 
+## [v2.2.0-SPIFFIT] - 2025-11-18
+### 🎯 Competitor Intelligence + Clean Demo UI
+**Why:** Incorporate supportingAlternate.md recommendations + clean UI for demo
+
+**Added:**
+- ✅ **Competitor Data Schema** - Production-ready table structure
+  - `competitor_offers` table with proper fields (provider, plan, price, speeds, SLA, etc.)
+  - Sample data from AT&T, Spectrum, Comcast, Verizon, Cox
+  - SQL file: `sql/05_create_competitor_offers_table.sql`
+- ✅ **Competitor Scraper Tool** - Real web scraping capability
+  - New file: `competitor_scraper_tool.py`
+  - Scrapes ISP competitor business pages
+  - Respects robots.txt and rate limiting
+  - BeautifulSoup-based extraction
+- ✅ **Priority Competitor Targets** - Added to web search tool
+  - AT&T Business: business.att.com
+  - Spectrum Business: business.spectrum.com
+  - Comcast Business: business.comcast.com
+  - Verizon Business: verizon.com/business
+  - Cox Business: cox.com/business
+  - Enhanced mock data with business offers
+- ✅ **Clean Chat Tab** - NEW demo-focused UI
+  - Simple user/agent conversation view
+  - No debug info or routing details
+  - Perfect for hackathon demo presentation
+- ✅ **Intelligence Tab** - Renamed to "Debug Mode"
+  - Existing detailed view preserved
+  - Shows AI reasoning, tool routing, raw results
+  - For development and troubleshooting
+
+**UI Changes:**
+- 💬 **New Tab 1: Chat** - Clean demo interface
+- 🧠 **Tab 2: Intelligence** - Debug mode (existing functionality)
+- 📐 **Tab 3: Architecture** - (unchanged)
+- 🔧 **Tab 4: Troubleshooting** - (unchanged)
+
+**Dependencies:**
+- Added `requests>=2.31.0`
+- Added `beautifulsoup4>=4.12.0`
+- Added `lxml>=4.9.0`
+
+**Documentation:**
+- Created `docs/ALTERNATE_APPROACH_COMPARISON.md` - Detailed comparison
+- Shows how to integrate competitor intelligence
+- Phase 1/2/3 implementation roadmap
+
+**Files Changed:**
+- `app.py` - Added Chat tab, restructured tab layout, updated version
+- `competitor_scraper_tool.py` - **NEW!** Web scraper for ISPs
+- `web_search_tool.py` - Added competitor targets + business offers
+- `sql/05_create_competitor_offers_table.sql` - **NEW!** DB schema
+- `requirements.txt` - Added scraping dependencies
+- `CHANGELOG.md` - This entry
+
+**Demo Impact:**
+- ⚡ Chat tab = clean presentation for judges
+- 🧠 Intelligence tab = show off smart routing when asked
+- 📊 Real competitor schema = "production ready" impression
+- 🕷️ Scraper tool = extensibility beyond hackathon
+
+---
+
 ## [v2.1.2-SPIFFIT] - 2025-11-18
 ### 🔧 Fixed: 'ResultData' object is not callable
 **Why:** SQL execution was failing with "'ResultData' object is not callable" error
