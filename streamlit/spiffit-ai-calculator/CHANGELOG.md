@@ -13,17 +13,22 @@ When deploying new changes:
 
 ## Version History
 
-### v1.3.1 - 2024-11-17
-**🔧 Critical Fix: Genie API**
-- ✅ Fixed Genie conversation flow (start_conversation → create_message)
-- ✅ Proper two-step API call with conversation_id
-- ✅ Added attachment parsing for Genie query results
-- ✅ Better error messages with troubleshooting guidance
+### v1.3.2 - 2024-11-17
+**🔧 Genie API Fix (Simplified)**
+- ✅ Corrected Genie API call: `start_conversation(space_id, content)`
+- ✅ Single API call creates conversation + sends message
+- ✅ Comprehensive response parsing (messages, content, text, attachments)
+- ✅ Debug output if response format is unexpected
 
 **Technical Details:**
-- Genie API requires: `start_conversation()` first to get `conversation_id`
-- Then: `create_message(conversation_id=...)` to send queries
-- Result may be in `content`, `text`, or `attachments`
+- Correct API: `start_conversation(space_id=..., content=question)`
+- This creates the conversation AND sends the first message
+- Response parsing handles multiple formats for SDK version compatibility
+
+### v1.3.1 - 2024-11-17 (DEPRECATED - wrong API flow)
+**🔧 Critical Fix: Genie API**
+- ❌ Tried two-step flow (was incorrect)
+- Issue: `start_conversation()` needs `content` parameter
 
 ### v1.3.0 - 2024-11-17
 **🎉 Major Feature: Competitor Intelligence**

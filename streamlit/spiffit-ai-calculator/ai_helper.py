@@ -63,44 +63,43 @@ class IncentiveAI:
         """
         Query using Genie space
         
-        Correct flow:
-        1. Start a conversation (gets conversation_id)
-        2. Create message in that conversation
-        3. Get result
+        API flow: start_conversation with content creates both conversation and first message
         """
         try:
-            # Step 1: Start a conversation to get a conversation_id
+            # Start conversation WITH the question (creates conversation + first message)
             conversation = self.workspace.genie.start_conversation(
-                space_id=self.genie_space_id
-            )
-            
-            if not conversation or not hasattr(conversation, 'conversation_id'):
-                return f"Failed to start Genie conversation. Response: {str(conversation)}"
-            
-            conversation_id = conversation.conversation_id
-            
-            # Step 2: Send the message to the conversation
-            message_response = self.workspace.genie.create_message(
                 space_id=self.genie_space_id,
-                conversation_id=conversation_id,
-                content=question
+                content=question  # Initial message
             )
             
-            # Step 3: Extract the response
-            # The response might be in different formats depending on SDK version
-            if message_response:
-                # Try different response formats
-                if hasattr(message_response, 'content'):
-                    return message_response.content
-                elif hasattr(message_response, 'text'):
-                    return message_response.text
-                elif hasattr(message_response, 'attachments') and message_response.attachments:
-                    # Genie may return data as attachments
-                    return self._format_genie_attachments(message_response.attachments)
+            if not conversation:
+                return "Failed to start Genie conversation (no response)"
+            
+            # Extract the response from conversation
+            # The conversation object may have different attributes depending on the response
+            if hasattr(conversation, 'messages') and conversation.messages:
+                # Get the last message (Genie's response)
+                last_message = conversation.messages[-1]
+                if hasattr(last_message, 'content'):
+                    return last_message.content
+                elif hasattr(last_message, 'text'):
+                    return last_message.text
                 else:
-                    return f"Received response from Genie but format unexpected: {str(message_response)}"
+                    return f"Message format unexpected: {str(last_message)}"
+            
+            elif hasattr(conversation, 'content'):
+                return conversation.content
+            
+            elif hasattr(conversation, 'text'):
+                return conversation.text
+            
+            elif hasattr(conversation, 'attachments') and conversation.attachments:
+                # Genie may return query results as attachments
+                return self._format_genie_attachments(conversation.attachments)
+            
             else:
-                return "No response from Genie"
+                # Debug: show what we got
+                return f"Received response from Genie but couldn't parse. Object type: {type(conversation).__name__}. Attributes: {dir(conversation)}"
                 
         except Exception as e:
             import traceback
