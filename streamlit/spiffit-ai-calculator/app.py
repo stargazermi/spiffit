@@ -34,7 +34,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.3.1-SPIFFIT"  # 📎 Added supporting data CSV download!
+APP_VERSION = "v3.3.2-SPIFFIT"  # 🔧 Fixed OAuth/PAT conflict in Databricks Apps!
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
 logger.info("🎸 When a problem comes along... you must Spiff It! 🎸")
@@ -153,13 +153,27 @@ def extract_and_display_genie_data(answer_text, key_prefix="data", display_ui=Tr
         # Execute query to get raw data
         from databricks.sdk import WorkspaceClient
         
-        # Use profile authentication (avoids oauth/pat conflicts)
-        profile = os.getenv("DATABRICKS_PROFILE")
-        if profile:
-            w = WorkspaceClient(profile=profile)
+        # Determine auth method based on environment
+        # 1. If DATABRICKS_CLIENT_ID exists, we're in Databricks Apps (use OAuth)
+        # 2. If DATABRICKS_PROFILE exists, we're running locally (use profile)
+        # 3. Otherwise, use default auth
+        
+        if os.getenv("DATABRICKS_CLIENT_ID"):
+            # Running in Databricks Apps - use OAuth explicitly
+            w = WorkspaceClient(
+                host=os.getenv("DATABRICKS_HOST"),
+                client_id=os.getenv("DATABRICKS_CLIENT_ID"),
+                client_secret=os.getenv("DATABRICKS_CLIENT_SECRET")
+            )
+            logger.info("🔐 Using OAuth authentication (Databricks Apps)")
+        elif os.getenv("DATABRICKS_PROFILE"):
+            # Running locally with profile
+            w = WorkspaceClient(profile=os.getenv("DATABRICKS_PROFILE"))
+            logger.info(f"🔐 Using profile authentication: {os.getenv('DATABRICKS_PROFILE')}")
         else:
-            # Fall back to default auth (will use environment variables)
+            # Fall back to default auth
             w = WorkspaceClient()
+            logger.info("🔐 Using default authentication")
         
         warehouse_id = os.getenv("SQL_WAREHOUSE_ID", "0962fa4cf0922125")
         
