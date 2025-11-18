@@ -278,15 +278,35 @@ Error details: {error_detail}
                     if hasattr(query_obj, 'result'):
                         result_data = query_obj.result
                         logger.info(f"📊 Query result type: {type(result_data)}")
+                        logger.info(f"📊 Query result value: {str(result_data)[:200]}...")
                         
-                        # Try to format result nicely
-                        if isinstance(result_data, (list, tuple)) and len(result_data) > 0:
-                            results.append(f"**Query Results:** {len(result_data)} rows")
-                            # Show first few rows
-                            results.append(f"```\n{str(result_data[:5])}\n```")
-                        else:
+                        # Check if result_data is None or empty
+                        if result_data is None:
+                            logger.warning("⚠️ Query result is None - query might have failed or returned no data")
+                            results.append("**Query Results:** ⚠️ No data returned (query may have failed or table is empty)")
+                        elif isinstance(result_data, (list, tuple)):
+                            if len(result_data) > 0:
+                                results.append(f"**Query Results:** {len(result_data)} rows found")
+                                # Format first few rows nicely
+                                results.append("```")
+                                for row in result_data[:10]:  # Show up to 10 rows
+                                    results.append(str(row))
+                                if len(result_data) > 10:
+                                    results.append(f"... and {len(result_data) - 10} more rows")
+                                results.append("```")
+                                logger.info(f"✅ Extracted {len(result_data)} result rows")
+                            else:
+                                logger.warning("⚠️ Query returned 0 rows")
+                                results.append("**Query Results:** 0 rows (table may be empty)")
+                        elif isinstance(result_data, str) and result_data.strip():
                             results.append(f"**Result:**\n```\n{result_data}\n```")
-                        logger.info(f"✅ Extracted query results")
+                            logger.info(f"✅ Extracted string result")
+                        else:
+                            logger.warning(f"⚠️ Unexpected result format: {type(result_data)}")
+                            results.append(f"**Result:** {result_data}")
+                    else:
+                        logger.warning("⚠️ Query object has no 'result' attribute")
+                        logger.info(f"📊 Query object attributes: {[a for a in dir(query_obj) if not a.startswith('_')]}")
                 
                 # Check for text content
                 if hasattr(attachment, 'text') and attachment.text:

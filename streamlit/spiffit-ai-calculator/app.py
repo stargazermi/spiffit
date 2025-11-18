@@ -30,7 +30,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v2.0.3-DEMO"  # REAL FIX: Handle GenieMessage (no messages array), extract from attachments
+APP_VERSION = "v2.0.4-DEMO"  # Better result data formatting + performance logging
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
 
@@ -215,8 +215,15 @@ I can intelligently route your questions across:
                     st.markdown("- Genie query timed out")
                     st.markdown(f"**Query took:** {elapsed:.1f}s")
                 else:
-                    # Display main answer
-                    st.success(f"✅ Got response in {elapsed:.1f}s")
+                    # Display main answer with performance feedback
+                    if elapsed > 15:
+                        st.warning(f"⏰ Got response in {elapsed:.1f}s (slow - SQL warehouse may have been stopped)")
+                        st.caption("💡 **Tip:** Keep SQL warehouse running for faster queries (~3-5s)")
+                    elif elapsed > 8:
+                        st.info(f"✅ Got response in {elapsed:.1f}s (normal for first query)")
+                    else:
+                        st.success(f"✅ Got response in {elapsed:.1f}s")
+                    
                     st.markdown(result["answer"])
                 
                 # Determine which Genies were called
