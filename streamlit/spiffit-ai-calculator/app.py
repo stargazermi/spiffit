@@ -34,7 +34,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.3.3-SPIFFIT"  # 🔑 Force PAT auth, ignore OAuth!
+APP_VERSION = "v3.3.4-SPIFFIT"  # 🔧 Fixed result.manifest AttributeError!
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
 logger.info("🎸 When a problem comes along... you must Spiff It! 🎸")
@@ -174,11 +174,25 @@ def extract_and_display_genie_data(answer_text, key_prefix="data", display_ui=Tr
         if hasattr(statement, 'result') and hasattr(statement.result, 'data_array'):
             data_array = statement.result.data_array
             
-            # Get column names
-            if hasattr(statement.result.manifest, 'schema') and hasattr(statement.result.manifest.schema, 'columns'):
-                columns = [col.name for col in statement.result.manifest.schema.columns]
-            else:
+            # Get column names - try different paths
+            columns = None
+            
+            # Try: statement.manifest.schema.columns (common path)
+            if hasattr(statement, 'manifest') and hasattr(statement.manifest, 'schema'):
+                if hasattr(statement.manifest.schema, 'columns'):
+                    columns = [col.name for col in statement.manifest.schema.columns]
+                    logger.info(f"✅ Got columns from statement.manifest.schema")
+            
+            # Try: statement.result.manifest.schema.columns
+            if not columns and hasattr(statement.result, 'manifest'):
+                if hasattr(statement.result.manifest, 'schema') and hasattr(statement.result.manifest.schema, 'columns'):
+                    columns = [col.name for col in statement.result.manifest.schema.columns]
+                    logger.info(f"✅ Got columns from statement.result.manifest.schema")
+            
+            # Fallback: generate generic column names
+            if not columns:
                 columns = [f"Column_{i}" for i in range(len(data_array[0]) if data_array else 0)]
+                logger.warning(f"⚠️ Using generic column names")
             
             # Create DataFrame
             df = pd.DataFrame(data_array, columns=columns)
