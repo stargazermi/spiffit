@@ -173,8 +173,27 @@ If you don't want to hardcode the token:
 ## ✅ **Current Status**
 
 - `app.yaml` configured with placeholder token
-- Version: `v1.4.5-DEMO`
+- Version: `v1.4.6-DEMO`
+- `auth_type='pat'` added to override OAuth M2M conflict
 - Ready to receive actual PAT token
 
 **Replace `YOUR_PAT_TOKEN_HERE` in `app.yaml` with your actual token and deploy!**
+
+---
+
+## 🔧 **v1.4.6-DEMO Update**
+
+Fixed the authentication conflict! When both OAuth M2M and PAT token are present, the SDK now explicitly uses PAT:
+
+```python
+# In ai_helper.py
+self.workspace = WorkspaceClient(host=host, token=token, auth_type='pat')
+#                                                        ^^^^^^^^^^^^^^^^
+#                                            Tells SDK: "Use PAT, ignore OAuth"
+```
+
+This resolves:
+```
+ValueError: more than one authorization method configured: oauth and pat
+```
 

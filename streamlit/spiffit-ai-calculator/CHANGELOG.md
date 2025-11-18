@@ -13,6 +13,36 @@ When deploying new changes:
 
 ## Version History
 
+### v1.4.6-DEMO - 2024-11-18
+**🔧 Fixed Authentication Conflict**
+- ✅ Added `auth_type='pat'` to WorkspaceClient to explicitly use PAT token
+- ✅ Overrides automatic OAuth M2M credentials from Databricks Apps
+- ✅ Resolves "more than one authorization method configured" error
+
+**The Problem:**
+```
+ValueError: more than one authorization method configured: oauth and pat
+Databricks Apps automatically sets DATABRICKS_CLIENT_ID/CLIENT_SECRET
+When we add DATABRICKS_TOKEN, SDK sees both and fails
+```
+
+**The Solution:**
+```python
+self.workspace = WorkspaceClient(host=host, token=token, auth_type='pat')
+#                                                        ^^^^^^^^^^^^^^^^
+#                                            Explicitly use PAT, ignore OAuth
+```
+
+**Files Updated:**
+- `ai_helper.py` - Added `auth_type='pat'` parameter
+- `app.py` - Version → v1.4.6-DEMO
+
+### v1.4.5-DEMO - 2024-11-18
+**⚠️ Temporary: Hardcoded PAT Token for Hackathon**
+- Token hardcoded in app.yaml (not committed to Git)
+- Manual edit in Databricks Git Folder only
+- **TODO: Remove after hackathon**
+
 ### v1.4.4 - 2024-11-18
 **🔧 Fixed Secret Resource Definition**
 - ✅ Added `resources` section to `app.yaml` to define secret as a resource

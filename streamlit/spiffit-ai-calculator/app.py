@@ -30,7 +30,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v1.4.5-DEMO"  # ⚠️ Temporary: Hardcoded PAT token for hackathon
+APP_VERSION = "v1.4.6-DEMO"  # Fixed auth conflict: explicitly use auth_type='pat'
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
 

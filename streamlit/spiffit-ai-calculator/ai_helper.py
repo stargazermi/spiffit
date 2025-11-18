@@ -52,7 +52,8 @@ class IncentiveAI:
             logger.info("✅ Using PAT Token authentication (host + token)")
             logger.info(f"   Host: {host}")
             logger.info(f"   Token: ***{token[-4:]}")
-            self.workspace = WorkspaceClient(host=host, token=token)
+            # Explicitly specify auth_type to override automatic OAuth M2M
+            self.workspace = WorkspaceClient(host=host, token=token, auth_type='pat')
             self.auth_method = "PAT Token"
         elif profile:
             # Local development with CLI profile
