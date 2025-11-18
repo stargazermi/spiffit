@@ -119,6 +119,8 @@ class IncentiveAI:
             # Wait for Genie to process the query
             conversation = wait_obj.result()
             logger.info("✅ Received response from Genie")
+            logger.info(f"📦 Response type: {type(conversation)}")
+            logger.info(f"📦 Response has messages: {hasattr(conversation, 'messages')}")
             
             if not conversation:
                 return "Failed to start Genie conversation (no response)"
@@ -127,26 +129,41 @@ class IncentiveAI:
             # The conversation object may have different attributes depending on the response
             if hasattr(conversation, 'messages') and conversation.messages:
                 # Get the last message (Genie's response)
+                logger.info(f"📨 Found {len(conversation.messages)} messages")
                 last_message = conversation.messages[-1]
-                if hasattr(last_message, 'content'):
+                logger.info(f"📨 Last message has content: {hasattr(last_message, 'content')}")
+                logger.info(f"📨 Last message has text: {hasattr(last_message, 'text')}")
+                logger.info(f"📨 Last message has attachments: {hasattr(last_message, 'attachments')}")
+                
+                if hasattr(last_message, 'content') and last_message.content:
+                    logger.info(f"✅ Extracted content ({len(str(last_message.content))} chars)")
                     return last_message.content
-                elif hasattr(last_message, 'text'):
+                elif hasattr(last_message, 'text') and last_message.text:
+                    logger.info(f"✅ Extracted text ({len(str(last_message.text))} chars)")
                     return last_message.text
+                elif hasattr(last_message, 'attachments') and last_message.attachments:
+                    logger.info(f"📎 Processing {len(last_message.attachments)} attachments")
+                    return self._format_genie_attachments(last_message.attachments)
                 else:
+                    logger.warning("⚠️ Last message has no extractable content")
                     return f"Message format unexpected: {str(last_message)}"
             
-            elif hasattr(conversation, 'content'):
+            elif hasattr(conversation, 'content') and conversation.content:
+                logger.info(f"✅ Extracted conversation content")
                 return conversation.content
             
-            elif hasattr(conversation, 'text'):
+            elif hasattr(conversation, 'text') and conversation.text:
+                logger.info(f"✅ Extracted conversation text")
                 return conversation.text
             
             elif hasattr(conversation, 'attachments') and conversation.attachments:
                 # Genie may return query results as attachments
+                logger.info(f"📎 Processing conversation attachments")
                 return self._format_genie_attachments(conversation.attachments)
             
             else:
                 # Debug: show what we got
+                logger.error("❌ Could not find response in conversation object")
                 return f"Received response from Genie but couldn't parse. Object type: {type(conversation).__name__}. Attributes: {dir(conversation)}"
                 
         except Exception as e:

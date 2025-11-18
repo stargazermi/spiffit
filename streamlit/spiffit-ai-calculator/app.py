@@ -30,7 +30,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v2.0.0-DEMO"  # Simplified multi-agent UI
+APP_VERSION = "v2.0.1-DEMO"  # Fixed response parsing & added debug logging
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
 
@@ -197,64 +197,79 @@ I can intelligently route your questions across:
         
         # Process with multi-tool agent
         with st.chat_message("assistant"):
-            with st.spinner("🔍 Analyzing and routing to best agents..."):
-                try:
+            try:
+                # Show progress with timing
+                import time
+                with st.spinner("🔍 Analyzing query and routing to best agents..."):
+                    start_time = time.time()
                     result = st.session_state.multi_agent.query(prompt)
-                    
+                    elapsed = time.time() - start_time
+                
+                # Debug: Check if answer is just the question echoed back
+                if result["answer"] == prompt or len(result["answer"].strip()) == 0:
+                    st.warning(f"⚠️ **Debug:** Genie returned empty or echoed response")
+                    st.info(f"**Raw result object:**\n```python\n{result}\n```")
+                    st.markdown("**This might mean:**")
+                    st.markdown("- Genie space has no data or tables")
+                    st.markdown("- SQL warehouse is stopped or has issues")
+                    st.markdown("- Genie query timed out")
+                    st.markdown(f"**Query took:** {elapsed:.1f}s")
+                else:
                     # Display main answer
+                    st.success(f"✅ Got response in {elapsed:.1f}s")
                     st.markdown(result["answer"])
+                
+                # Determine which Genies were called
+                genie_calls = []
+                if "genie_sales" in result.get("tools_used", []):
+                    genie_calls.append("Sales")
+                if "genie_analytics" in result.get("tools_used", []):
+                    genie_calls.append("Analytics")
+                if "genie_market" in result.get("tools_used", []):
+                    genie_calls.append("Market")
+                
+                # Show which Genies were used
+                if genie_calls:
+                    st.info(f"**🧠 Genies Called:** {', '.join(genie_calls)}")
+                
+                # Show routing and tools used
+                with st.expander("🧠 AI Reasoning & Smart Routing"):
+                    st.markdown(f"**Routing Decision:** {result['routing_reasoning']}")
+                    st.markdown(f"**Tools Used:** {', '.join(result['tools_used'])}")
                     
-                    # Determine which Genies were called
-                    genie_calls = []
-                    if "genie_sales" in result.get("tools_used", []):
-                        genie_calls.append("Sales")
-                    if "genie_analytics" in result.get("tools_used", []):
-                        genie_calls.append("Analytics")
-                    if "genie_market" in result.get("tools_used", []):
-                        genie_calls.append("Market")
+                    # Show errors if any
+                    if result.get("errors"):
+                        st.warning("**⚠️ Some tools encountered errors:**")
+                        for tool_name, error in result["errors"].items():
+                            st.error(f"**{tool_name}:** {error[:200]}...")
+                        st.info("💡 Check Troubleshooting tab for Genie connection details")
                     
-                    # Show which Genies were used
-                    if genie_calls:
-                        st.info(f"**🧠 Genies Called:** {', '.join(genie_calls)}")
-                    
-                    # Show routing and tools used
-                    with st.expander("🧠 AI Reasoning & Smart Routing"):
-                        st.markdown(f"**Routing Decision:** {result['routing_reasoning']}")
-                        st.markdown(f"**Tools Used:** {', '.join(result['tools_used'])}")
-                        
-                        # Show errors if any
-                        if result.get("errors"):
-                            st.warning("**⚠️ Some tools encountered errors:**")
-                            for tool_name, error in result["errors"].items():
-                                st.error(f"**{tool_name}:** {error[:200]}...")
-                            st.info("💡 Check Troubleshooting tab for Genie connection details")
-                        
-                        # Show raw results from each tool
-                        if result.get("raw_results"):
-                            st.markdown("**📊 Raw Results from Each Agent:**")
-                            for tool_name, tool_result in result["raw_results"].items():
-                                st.markdown(f"**{tool_name.upper()}:**")
-                                st.code(tool_result[:500] + "..." if len(tool_result) > 500 else tool_result)
-                    
-                    # Save response with metadata
-                    st.session_state.intelligence_messages.append({
-                        "role": "assistant",
-                        "content": result["answer"],
-                        "genie_calls": genie_calls,
-                        "tool_details": {
-                            "routing": result["routing_reasoning"],
-                            "tools": result["tools_used"],
-                            "errors": result.get("errors", {}),
-                        }
-                    })
-                    
-                except Exception as e:
-                    error_msg = f"❌ Error: {str(e)}"
-                    st.error(error_msg)
-                    st.session_state.intelligence_messages.append({
-                        "role": "assistant",
-                        "content": error_msg
-                    })
+                    # Show raw results from each tool
+                    if result.get("raw_results"):
+                        st.markdown("**📊 Raw Results from Each Agent:**")
+                        for tool_name, tool_result in result["raw_results"].items():
+                            st.markdown(f"**{tool_name.upper()}:**")
+                            st.code(tool_result[:500] + "..." if len(tool_result) > 500 else tool_result)
+                
+                # Save response with metadata
+                st.session_state.intelligence_messages.append({
+                    "role": "assistant",
+                    "content": result["answer"],
+                    "genie_calls": genie_calls,
+                    "tool_details": {
+                        "routing": result["routing_reasoning"],
+                        "tools": result["tools_used"],
+                        "errors": result.get("errors", {}),
+                    }
+                })
+                
+            except Exception as e:
+                error_msg = f"❌ Error: {str(e)}"
+                st.error(error_msg)
+                st.session_state.intelligence_messages.append({
+                    "role": "assistant",
+                    "content": error_msg
+                })
 
 # Tab 2: Architecture & Tech Stack
 with tab2:
