@@ -24,16 +24,23 @@ class IncentiveAI:
                        (e.g., 'databricks-meta-llama-3-1-70b-instruct')
         """
         # Initialize Databricks client
-        # Local: uses CLI profile (dlk-hackathon)
-        # Databricks Apps: uses automatic authentication (no profile needed)
+        # Priority:
+        # 1. PAT token (DATABRICKS_HOST + DATABRICKS_TOKEN) - for Genie access
+        # 2. CLI profile (DATABRICKS_PROFILE) - for local development
+        # 3. Automatic OAuth - for Databricks Apps (no Genie support)
         
+        host = os.getenv("DATABRICKS_HOST")
+        token = os.getenv("DATABRICKS_TOKEN")
         profile = os.getenv("DATABRICKS_PROFILE")
         
-        if profile:
+        if host and token:
+            # PAT token authentication (supports Genie)
+            self.workspace = WorkspaceClient(host=host, token=token)
+        elif profile:
             # Local development with CLI profile
             self.workspace = WorkspaceClient(profile=profile)
         else:
-            # Databricks Apps - automatic authentication
+            # Databricks Apps - automatic OAuth (doesn't support Genie)
             self.workspace = WorkspaceClient()
         
         self.genie_space_id = genie_space_id

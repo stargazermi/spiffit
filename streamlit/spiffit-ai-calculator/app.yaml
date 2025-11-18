@@ -29,4 +29,13 @@ env:
   # Single space for simple calculator (defaults to sales)
   - name: GENIE_SPACE_ID
     value: "01f0c403c3cf184e9b7f1f6c9ee45905"
+  
+  # Databricks Authentication (for Genie access)
+  # Uses Databricks Secrets for secure token storage
+  - name: DATABRICKS_HOST
+    value: "https://dbc-4a93b454-f17b.cloud.databricks.com"
+  - name: DATABRICKS_TOKEN
+    value_from:
+      secret_scope: spiffit-secrets
+      secret_key: databricks-pat-token
 
