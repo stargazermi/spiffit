@@ -84,12 +84,19 @@ class IncentiveAI:
         API flow: start_conversation returns Wait object, call .result() to get conversation
         """
         try:
+            # ⏱️ TIMING: Genie API call
+            start_time = time.time()
+            logger.info(f"⏱️ [START] Genie API call to space {self.genie_space_id}")
+            
             # Start conversation and wait for response
             wait_obj = self.workspace.genie.start_conversation(
                 space_id=self.genie_space_id,
                 content=question
             )
             conversation = wait_obj.result()
+            
+            elapsed = time.time() - start_time
+            logger.info(f"⏱️ [END] Genie API call completed in {elapsed:.2f}s")
             
             if not conversation:
                 return "Failed to start Genie conversation (no response)"
@@ -316,9 +323,10 @@ Error details: {error_detail}
         Execute a SQL query against the warehouse and return formatted results
         """
         try:
-            # Get warehouse ID from environment (same warehouse Genie uses)
+            # ⏱️ TIMING: SQL query execution
+            start_time = time.time()
             warehouse_id = os.getenv("SQL_WAREHOUSE_ID", "0962fa4cf0922125")
-            
+            logger.info(f"⏱️ [START] SQL execution on warehouse {warehouse_id}")
             
             # Execute SQL statement
             statement = self.workspace.statement_execution.execute_statement(
@@ -326,6 +334,9 @@ Error details: {error_detail}
                 statement=sql_query,
                 wait_timeout="30s"
             )
+            
+            elapsed = time.time() - start_time
+            logger.info(f"⏱️ [END] SQL execution completed in {elapsed:.2f}s")
             
             
             # Get result - it might be a property or method

@@ -34,7 +34,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.4.0-SPIFFIT"  # 🧹 Cleaned up verbose logging!
+APP_VERSION = "v3.5.0-SPIFFIT"  # ⏱️ Added performance timing logs!
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"🎸 Spiffit v{APP_VERSION} - Deployed: {DEPLOYMENT_TIME}")
 
@@ -140,6 +140,11 @@ def extract_and_display_genie_data(answer_text, key_prefix="data", display_ui=Tr
     
     Returns: (has_data: bool, df: pd.DataFrame or None)
     """
+    # ⏱️ TIMING: Data extraction
+    import time
+    start_time = time.time()
+    logger.info(f"⏱️ [START] Data extraction for {key_prefix}")
+    
     # Try to extract SQL query from answer
     sql_match = re.search(r'```sql\n(.*?)\n```', answer_text, re.DOTALL)
     if not sql_match:
@@ -283,6 +288,10 @@ def extract_and_display_genie_data(answer_text, key_prefix="data", display_ui=Tr
                     if st.button("📋 Copy for Email", key=f"copy_email_{key_prefix}", use_container_width=True):
                         st.toast("✅ Copied to clipboard!")
                         st.code(email_format, language=None)
+            
+            # ⏱️ TIMING: Data extraction complete
+            elapsed = time.time() - start_time
+            logger.info(f"⏱️ [END] Data extraction completed in {elapsed:.2f}s ({len(df)} rows)")
             
             return True, df
             
