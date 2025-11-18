@@ -1,14 +1,38 @@
 # Spiffit AI Calculator
 
 ## 🎯 Purpose
-Natural language interface for incentive calculations using Databricks AI.
+Natural language interface for incentive calculations and competitor intelligence using Databricks AI.
+
+## ✨ Features
+
+### 💬 Chat Tab
+- Natural language queries for internal incentive data
+- Connected to Genie space for sales performance
+- Intent extraction and query parsing
+
+### 🌐 Competitor Intelligence Tab (NEW v1.3.0!)
+- **Multi-tool agent** with automatic smart routing
+- **Source selection**:
+  - Internal queries → Genie spaces (sales, analytics, market)
+  - Competitor queries → Web search tool
+  - Complex queries → Multiple sources + AI synthesis
+- **GPT-5.1** orchestration for reasoning and recommendations
+- **Transparent AI** - see which tools were used and routing decisions
+
+### 🔧 Troubleshooting Tab
+- Environment variable inspection
+- Connection status monitoring
+- Deployment version/timestamp tracking
 
 ## 📁 Files
-- `app.py` - Main Streamlit application with chat interface
+- `app.py` - Main Streamlit application with 3 tabs
 - `ai_helper.py` - AI/LLM integration (Genie & Foundation Models)
 - `query_parser.py` - Natural language query parsing
+- `multi_tool_agent.py` - **NEW:** Smart routing orchestrator
+- `web_search_tool.py` - **NEW:** Competitor intelligence search
 - `app.yaml` - Databricks App configuration
 - `requirements.txt` - Python dependencies
+- `CHANGELOG.md` - Version history
 - `README.md` - This file
 
 ## 🚀 Quick Start
@@ -142,12 +166,19 @@ See `ai_integration_guide.md` in the parent folder for detailed instructions.
 
 ## 🎯 Example Queries
 
-Try these questions:
+### 💬 Chat Tab (Internal Data):
 - "What's my incentive?"
 - "Show John Smith's total payout"
 - "Who are the top 10 performers?"
 - "What if I close $50K more in MRR?"
 - "How am I tracking against my budget?"
+
+### 🌐 Competitor Intelligence Tab (NEW!):
+- "What SPIFFs is AT&T offering in Q4?"
+- "Compare Verizon and T-Mobile programs"
+- "How do our incentives compare to competitors?"
+- "What are common themes in competitor promotions?"
+- "Recommend competitive SPIFFs based on market analysis"
 
 ## 🆘 Troubleshooting
 

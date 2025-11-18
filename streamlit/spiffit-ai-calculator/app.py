@@ -12,9 +12,11 @@ import os
 from datetime import datetime
 from ai_helper import IncentiveAI
 from query_parser import QueryParser
+from multi_tool_agent import MultiToolAgent
+from web_search_tool import CompetitorSearchTool
 
 # Version and deployment tracking
-APP_VERSION = "v1.2.0"  # Update this with each deployment
+APP_VERSION = "v1.3.0"  # Update this with each deployment (added competitor intel)
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 # Page configuration
@@ -59,18 +61,27 @@ def init_ai():
         """)
     
     parser = QueryParser(ai)
-    return ai, parser
+    
+    # Initialize multi-tool agent for competitor intelligence
+    multi_agent = MultiToolAgent(
+        genie_sales_id=os.getenv("GENIE_SALES_SPACE_ID"),
+        genie_analytics_id=os.getenv("GENIE_ANALYTICS_SPACE_ID"),
+        genie_market_id=os.getenv("GENIE_MARKET_SPACE_ID"),
+        orchestrator_model="databricks-gpt-5-1"  # Use GPT-5.1 from serving endpoints
+    )
+    
+    return ai, parser, multi_agent
 
 # Only initialize if we're past the config page
 if 'ai' not in st.session_state:
-    st.session_state.ai, st.session_state.parser = init_ai()
+    st.session_state.ai, st.session_state.parser, st.session_state.multi_agent = init_ai()
 
 # Main app
 st.title("🤖 Spiffit AI Calculator")
 st.caption("Ask me anything about incentives in plain English!")
 
-# Create tabs for main app and troubleshooting
-tab1, tab2 = st.tabs(["💬 Chat", "🔧 Troubleshooting"])
+# Create tabs for main app, competitor intel, and troubleshooting
+tab1, tab2, tab3 = st.tabs(["💬 Chat", "🌐 Competitor Intel", "🔧 Troubleshooting"])
 
 # Sidebar with configuration and examples
 with st.sidebar:
@@ -199,8 +210,113 @@ I would show the top performers by **{parsed['metric']}** here.
         # Add assistant response to chat
         st.session_state.messages.append({"role": "assistant", "content": response})
 
-# Tab 2: Troubleshooting & Environment
+# Tab 2: Competitor Intelligence
 with tab2:
+    st.header("🌐 Competitor Intelligence")
+    st.caption("Multi-tool agent: Genie spaces + web search for comprehensive market intelligence")
+    
+    # Initialize competitor chat history
+    if "competitor_messages" not in st.session_state:
+        st.session_state.competitor_messages = []
+        st.session_state.competitor_messages.append({
+            "role": "assistant",
+            "content": """👋 **Welcome to Competitor Intelligence!**
+            
+I can help you research competitor SPIFF programs and compare them with our internal data.
+
+**Try asking:**
+- "What SPIFFs is AT&T offering in Q4?"
+- "Compare our top performers with Verizon's programs"
+- "How do our incentives stack up against competitors?"
+- "What are the common themes in competitor promotions?"
+
+💡 **Behind the scenes:** I'll automatically route your query to the right tools:
+- 🏢 **Genie spaces** for internal data
+- 🌐 **Web search** for competitor intel
+- 🤖 **GPT-5.1** for synthesis and recommendations
+"""
+        })
+    
+    # Show example queries
+    st.markdown("### 📋 Quick Actions")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("🔍 Search AT&T Programs", key="att_btn"):
+            st.session_state.competitor_input = "What SPIFF programs is AT&T offering in Q4 2024?"
+        if st.button("📊 Compare All Competitors", key="compare_btn"):
+            st.session_state.competitor_input = "Compare SPIFF programs across AT&T, Verizon, and T-Mobile"
+    
+    with col2:
+        if st.button("⚔️ Our SPIFFs vs Competitors", key="vs_btn"):
+            st.session_state.competitor_input = "How do our SPIFF programs compare to competitor offerings?"
+        if st.button("💡 Get Recommendations", key="rec_btn"):
+            st.session_state.competitor_input = "Based on competitor analysis, what SPIFFs should we offer?"
+    
+    st.markdown("---")
+    
+    # Display chat history
+    for message in st.session_state.competitor_messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+            
+            # Show tool details if available
+            if message["role"] == "assistant" and "tool_details" in message:
+                with st.expander("🔧 Tools Used"):
+                    st.json(message["tool_details"])
+    
+    # Chat input (check for programmatic input first)
+    if "competitor_input" in st.session_state and st.session_state.competitor_input:
+        prompt = st.session_state.competitor_input
+        st.session_state.competitor_input = None  # Clear after use
+    else:
+        prompt = st.chat_input("Ask about competitor intelligence...", key="competitor_chat")
+    
+    if prompt:
+        # Add user message
+        st.session_state.competitor_messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        
+        # Process with multi-tool agent
+        with st.chat_message("assistant"):
+            with st.spinner("🔍 Searching across data sources..."):
+                try:
+                    result = st.session_state.multi_agent.query(prompt)
+                    
+                    # Display main answer
+                    st.markdown(result["answer"])
+                    
+                    # Show routing and tools used
+                    with st.expander("🧠 AI Reasoning & Tools"):
+                        st.markdown(f"**Routing Decision:** {result['routing_reasoning']}")
+                        st.markdown(f"**Tools Used:** {', '.join(result['tools_used'])}")
+                        
+                        # Show raw results from each tool
+                        for tool_name, tool_result in result.get("raw_results", {}).items():
+                            st.markdown(f"**{tool_name.upper()}:**")
+                            st.text(tool_result[:500] + "..." if len(tool_result) > 500 else tool_result)
+                    
+                    # Save response with metadata
+                    st.session_state.competitor_messages.append({
+                        "role": "assistant",
+                        "content": result["answer"],
+                        "tool_details": {
+                            "tools_used": result["tools_used"],
+                            "routing_reasoning": result["routing_reasoning"]
+                        }
+                    })
+                    
+                except Exception as e:
+                    error_msg = f"❌ Error querying multi-tool agent: {str(e)}"
+                    st.error(error_msg)
+                    st.session_state.competitor_messages.append({
+                        "role": "assistant",
+                        "content": error_msg
+                    })
+
+# Tab 3: Troubleshooting & Environment
+with tab3:
     st.header("🔧 Troubleshooting & Environment Info")
     
     # Version and Deployment Info

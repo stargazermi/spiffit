@@ -13,6 +13,28 @@ When deploying new changes:
 
 ## Version History
 
+### v1.3.0 - 2024-11-17
+**🎉 Major Feature: Competitor Intelligence**
+- ✅ Added **Multi-Tool Agent** with smart routing
+- ✅ New **Competitor Intelligence** tab
+- ✅ **Web Search Tool** for competitor SPIFF research
+- ✅ Orchestration with **GPT-5.1** from serving endpoints
+- ✅ Automatic routing between Genie spaces and web search
+- ✅ Result synthesis across multiple data sources
+- ✅ Quick action buttons for common queries
+- ✅ Tool usage transparency (shows routing decisions)
+
+**Architecture:**
+- Multi-tool agent routes queries to appropriate tools
+- Genie spaces → internal data (sales, analytics, market)
+- Web search → external competitor data
+- Foundation Model → orchestration & synthesis
+
+**Demo Queries:**
+- "What SPIFFs is AT&T offering?"
+- "Compare our programs with Verizon"
+- "Recommend competitive SPIFFs for next month"
+
 ### v1.2.0 - 2024-11-17
 **Changes:**
 - ✅ Fixed Genie API method (`start_conversation` instead of `ask_question`)
