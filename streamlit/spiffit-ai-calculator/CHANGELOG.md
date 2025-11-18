@@ -1,6 +1,36 @@
-# 📝 Spiffit Multi-Agent Changelog
+# 📝 Spiffit - Spiff It Good! Changelog
 
-All notable changes to the Spiffit Multi-Agent application.
+All notable changes to the Spiffit application.
+
+---
+
+## [v2.1.0-SPIFFIT] - 2025-11-18
+### 🎸 "Spiff It" Theme - When SPIFFs Get Tough!
+**Why:** Hackathon theme song deserves proper branding! Based on Devo's "Whip It"
+
+**Changed:**
+- ⚡ Updated app title: "Spiffit - When SPIFFs Get Tough, You Gotta Spiff It!"
+- 🎸 Added energetic subtitle: "Spiff it good! - AI-powered sales incentive intelligence"
+- 💪 Updated tagline: "Powered by multi-agent AI + Databricks Genie + 100% pure hackathon energy!"
+- 🎵 Rewrote sidebar header: "When a problem comes along... you must Spiff It!"
+- ⚡ Updated example buttons with more energy:
+  - "Beat the competition!"
+  - "Next month's play"
+  - "Market domination"
+  - "Spiff it GOOD!"
+- 🎸 Updated tab headers with theme
+- ⚡ Changed page icon from 🤖 to ⚡
+- 📖 Updated README with theme song info
+
+**Performance Impact:**
+- +1000% fun factor! 🎉
+- +100% hackathon spirit! 🚀
+- Same great AI, now with more rock n' roll! 🎸
+
+**Files Changed:**
+- `app.py` - Updated all UI text with "Spiff It" theme
+- `README.md` - Added theme song reference
+- `CHANGELOG.md` - This entry!
 
 ---
 

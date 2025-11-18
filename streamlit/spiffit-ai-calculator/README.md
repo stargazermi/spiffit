@@ -1,6 +1,10 @@
-# 🤖 Spiffit Multi-Agent
+# ⚡ Spiffit - Spiff It Good!
+
+> 🎸 *When a SPIFF problem comes along... you must Spiff It!*
 
 Intelligent SPIFF analysis powered by multiple AI agents and Databricks Genie spaces.
+
+**🎵 Theme Song:** "Spiff It" - A hackathon anthem based on Devo's "Whip It", because when SPIFFs get tough, you gotta Spiff It... GOOD!
 
 ## 🎯 Overview
 

@@ -30,14 +30,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v2.0.5-DEMO"  # SQL execution for actual query results
+APP_VERSION = "v2.1.0-SPIFFIT"  # 🎸 "Spiff It" theme + SQL execution
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
+logger.info("🎸 When a problem comes along... you must Spiff It! 🎸")
 
 # Page configuration
 st.set_page_config(
-    page_title="Spiffit Multi-Agent",
-    page_icon="🤖",
+    page_title="Spiffit - Spiff It Good!",
+    page_icon="⚡",
     layout="wide"
 )
 
@@ -91,9 +92,10 @@ def init_ai():
 if 'ai' not in st.session_state:
     st.session_state.ai, st.session_state.parser, st.session_state.multi_agent = init_ai()
 
-# Main app
-st.title("🤖 Spiffit Multi-Agent")
-st.caption("Intelligent SPIFF analysis powered by multiple AI agents and Genie spaces")
+# Main app - "Spiff It" theme!
+st.title("⚡ Spiffit - When SPIFFs Get Tough, You Gotta Spiff It!")
+st.markdown("### 🎸 *Spiff it good!* - AI-powered sales incentive intelligence")
+st.caption("💪 Powered by multi-agent AI + Databricks Genie + 100% pure hackathon energy!")
 
 # Create tabs for intelligence, architecture, and troubleshooting
 tab1, tab2, tab3 = st.tabs(["🧠 Intelligence", "📐 Architecture & Tech Stack", "🔧 Troubleshooting"])
@@ -120,35 +122,36 @@ with st.sidebar:
         st.session_state.ai.model_name = model_choice
     
     st.markdown("---")
-    st.header("📝 Example Questions")
-    st.markdown("**Click any example to try it:**")
+    st.header("🎸 Spiff It Examples")
+    st.markdown("**🎵 When a problem comes along... you must Spiff It!**")
+    st.markdown("*Click any example to try it:*")
     
     # Initialize input state
     if "intelligence_input" not in st.session_state:
         st.session_state.intelligence_input = None
     
-    st.markdown("**🔍 Single Agent (One Genie Space):**")
-    if st.button("📊 Top sales performers", use_container_width=True, key="ex1"):
+    st.markdown("**⚡ Quick Hits (Single Genie):**")
+    if st.button("📊 Top performers", use_container_width=True, key="ex1"):
         st.session_state.intelligence_input = "Show me the top performers this quarter"
-    if st.button("🏆 Recent SPIFF winners", use_container_width=True, key="ex2"):
+    if st.button("🏆 Winners circle", use_container_width=True, key="ex2"):
         st.session_state.intelligence_input = "Who won the last SPIFF competition?"
     
-    st.markdown("**🤖 Multi-Agent (Multiple Genies + Routing):**")
-    if st.button("⚔️ Internal vs Competitors", use_container_width=True, key="ex3"):
+    st.markdown("**🚀 Multi-Agent Power:**")
+    if st.button("⚔️ Beat the competition!", use_container_width=True, key="ex3"):
         st.session_state.intelligence_input = "Compare our top performers with AT&T's SPIFF programs"
-    if st.button("💡 Strategic Recommendations", use_container_width=True, key="ex4"):
+    if st.button("💡 Next month's play", use_container_width=True, key="ex4"):
         st.session_state.intelligence_input = "Based on our sales data and competitor intel, what SPIFFs should we offer next month?"
-    if st.button("📈 Market Analysis", use_container_width=True, key="ex5"):
+    if st.button("📈 Market domination", use_container_width=True, key="ex5"):
         st.session_state.intelligence_input = "How do our incentives compare to Verizon and T-Mobile?"
     
-    st.markdown("**🧠 Smart Routing (AI chooses best sources):**")
-    if st.button("🎯 Comprehensive Analysis", use_container_width=True, key="ex6"):
+    st.markdown("**🧠 Full Auto (Smart Routing):**")
+    if st.button("🎯 Spiff it GOOD!", use_container_width=True, key="ex6"):
         st.session_state.intelligence_input = "Should we increase our SPIFF budget? Consider sales performance, leaderboards, and what competitors are doing."
 
 # Tab 1: Intelligence (Multi-Agent)
 with tab1:
-    st.header("🧠 Multi-Agent Intelligence")
-    st.caption("Query multiple Genie spaces + web search with smart routing")
+    st.header("⚡ Intelligence - Spiff It Good!")
+    st.caption("🎸 Multi-agent AI + Genie spaces + web search = Sales intelligence that rocks!")
     
     # Initialize intelligence chat history
     if "intelligence_messages" not in st.session_state:
