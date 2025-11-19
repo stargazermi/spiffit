@@ -35,7 +35,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.9.5-SPIFFIT"  # 🐛 Critical: Convert string columns to numeric before pivot aggregation
+APP_VERSION = "v3.9.6-SPIFFIT"  # 🎸 Demo Ready: All fixes complete, chart displays correctly!
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"🎸 Spiffit v{APP_VERSION} - Deployed: {DEPLOYMENT_TIME}")
 
