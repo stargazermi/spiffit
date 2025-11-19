@@ -35,7 +35,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.8.3-SPIFFIT"  # 🐛 Fixed: Added caching to automated demo's next month query
+APP_VERSION = "v3.9.8-SPIFFIT"  # 🎸 Live Demo: Multi-agent AI with 15+ Foundation Models!
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"🎸 Spiffit v{APP_VERSION} - Deployed: {DEPLOYMENT_TIME}")
 
@@ -205,7 +205,28 @@ def extract_and_display_genie_data(answer_text, key_prefix="data", display_ui=Tr
                 st.dataframe(df, use_container_width=True)
             
             # Create visualization if we have the right columns
-            if display_ui and 'Incentive_Payout' in df.columns and 'Total_MRR' in df.columns:
+            # Support multiple column name variations from Genie
+            mrr_col = None
+            payout_col = None
+            
+            logger.info(f"📊 Available columns: {list(df.columns)}")
+            
+            for col in df.columns:
+                col_lower = col.lower().replace('_', '').replace(' ', '')
+                if 'mrr' in col_lower and not mrr_col:
+                    mrr_col = col
+                    logger.info(f"✅ Found MRR column: {col}")
+                if ('incentive' in col_lower or 'payout' in col_lower) and not payout_col:
+                    payout_col = col
+                    logger.info(f"✅ Found Payout column: {col}")
+            
+            if not mrr_col:
+                logger.warning(f"❌ No MRR column found in: {list(df.columns)}")
+            if not payout_col:
+                logger.warning(f"❌ No Payout column found in: {list(df.columns)}")
+            
+            if display_ui and mrr_col and payout_col:
+                logger.info(f"🎨 Creating chart with MRR={mrr_col}, Payout={payout_col}")
                 st.subheader("📈 MRR and Incentive Payout")
                 
                 # Prepare data for chart
@@ -218,7 +239,7 @@ def extract_and_display_genie_data(answer_text, key_prefix="data", display_ui=Tr
                         owner_col = col
                         break
                 
-                # Create grouped bar chart
+                # Create grouped bar chart (matching Genie UI style)
                 fig = go.Figure()
                 
                 # Determine x-axis values
@@ -229,32 +250,53 @@ def extract_and_display_genie_data(answer_text, key_prefix="data", display_ui=Tr
                     x_values = chart_df.index
                     x_title = "Opportunity ID"
                 
-                # Add MRR bars
+                # Add MRR bars (teal/blue like Genie)
                 fig.add_trace(go.Bar(
                     x=x_values,
-                    y=chart_df['Total_MRR'],
-                    name='Total MRR',
-                    marker_color='lightblue'
+                    y=chart_df[mrr_col],
+                    name='Sum_MRR',
+                    marker_color='rgb(31, 119, 180)',  # Blue matching Genie
+                    text=chart_df[mrr_col].apply(lambda x: f'${x:,.0f}'),
+                    textposition='outside'
                 ))
                 
-                # Add Incentive Payout bars
+                # Add Incentive Payout bars (orange/yellow like Genie)
                 fig.add_trace(go.Bar(
                     x=x_values,
-                    y=chart_df['Incentive_Payout'],
-                    name='Incentive Payout',
-                    marker_color='darkblue'
+                    y=chart_df[payout_col],
+                    name='Sum_Incentive_Payout',
+                    marker_color='rgb(255, 127, 14)',  # Orange matching Genie
+                    text=chart_df[payout_col].apply(lambda x: f'${x:,.0f}'),
+                    textposition='outside'
                 ))
                 
                 fig.update_layout(
                     title=f"Sum of MRR and Incentive Payout by {x_title}",
                     xaxis_title=x_title,
-                    yaxis_title="Amount",
+                    yaxis_title="Amount ($)",
                     barmode='group',
-                    height=400,
-                    xaxis={'tickangle': -45} if owner_col else {}
+                    height=500,
+                    xaxis={'tickangle': -45} if owner_col else {},
+                    showlegend=True,
+                    legend=dict(
+                        orientation="h",
+                        yanchor="bottom",
+                        y=1.02,
+                        xanchor="right",
+                        x=1
+                    ),
+                    font=dict(size=12)
                 )
                 
                 st.plotly_chart(fig, use_container_width=True)
+            elif display_ui:
+                # Show warning if chart can't be created
+                if not mrr_col and not payout_col:
+                    logger.warning(f"⚠️ Cannot create chart - missing both MRR and Payout columns")
+                elif not mrr_col:
+                    logger.warning(f"⚠️ Cannot create chart - missing MRR column")
+                elif not payout_col:
+                    logger.warning(f"⚠️ Cannot create chart - missing Payout column")
             
             # Add download buttons (only if displaying UI)
             if display_ui:
@@ -573,37 +615,9 @@ o Customers with existing Voice products who are adding additional, incremental 
                     st.markdown(error_msg["content"])
                 st.session_state.demo_auto_displayed += 1
         
-        # Step 2: Create pivot table summary by opportunity owner
+        # Step 2: Create pivot table summary by opportunity owner (from detailed data)
         try:
-            with st.spinner("🤔 Creating summary by Opportunity Owner..."):
-                # Query for pivot table grouped by opportunity owner
-                pivot_prompt = """Create a pivot table from the Voice Opportunities data that:
-- Groups by Opportunity Owner
-- Sums the Total MRR for each owner
-- Sums the Incentive Payout for each owner
-Show the results sorted by Total MRR descending."""
-                
-                # ⚡ PERFORMANCE: Cache pivot results for instant demo replay
-                cache_key = "demo_voice_pivot_cache"
-                if cache_key in st.session_state:
-                    logger.info("⚡ Using cached pivot results (with 2s delay for demo feel)")
-                    time.sleep(2)  # Small delay so it doesn't look pre-recorded
-                    result = st.session_state[cache_key]
-                else:
-                    logger.info("🔄 First run - querying Genie for pivot...")
-                    result = st.session_state.multi_agent.query(pivot_prompt)
-                    st.session_state[cache_key] = result  # Cache for next time
-                
-                answer = result["answer"]
-                
-                # Store the result message
-                result_msg = {
-                    "role": "assistant",
-                    "content": answer
-                }
-                st.session_state.demo_messages.append(result_msg)
-            
-            # NOW display the message and data together (after spinner completes)
+            # NOW display the message and data together
             pivot_msg = {
                 "role": "assistant",
                 "content": "📊 **Here's the summary by Opportunity Owner:**\n\n*This is what you'll send to the compensation team*"
@@ -614,9 +628,162 @@ Show the results sorted by Total MRR descending."""
                 # Display the message
                 st.markdown(pivot_msg["content"])
                 
-                # Then immediately display the data
-                # Try to extract and display pivot data with chart
-                has_data, df = extract_and_display_genie_data(answer, key_prefix="voice_pivot")
+                # Create pivot table from detailed data (faster and more reliable than asking Genie)
+                if hasattr(st.session_state, 'detailed_voice_data') and st.session_state.detailed_voice_data is not None:
+                    import pandas as pd
+                    
+                    detailed_df = st.session_state.detailed_voice_data
+                    logger.info(f"📊 Creating pivot from {len(detailed_df)} detailed rows")
+                    logger.info(f"📊 Available columns in detailed data: {list(detailed_df.columns)}")
+                    
+                    # Detect column names flexibly (case-insensitive, handles variations)
+                    mrr_col = None
+                    payout_col = None
+                    owner_col = None
+                    
+                    for col in detailed_df.columns:
+                        col_lower = col.lower().replace('_', '').replace(' ', '')
+                        if 'mrr' in col_lower and not mrr_col:
+                            mrr_col = col
+                            logger.info(f"✅ Found MRR column: {col}")
+                        if ('incentive' in col_lower or 'payout' in col_lower) and not payout_col:
+                            payout_col = col
+                            logger.info(f"✅ Found Payout column: {col}")
+                        if 'owner' in col_lower and 'manager' not in col_lower and not owner_col:
+                            owner_col = col
+                            logger.info(f"✅ Found Owner column: {col}")
+                    
+                    # Validate we have required columns
+                    if not mrr_col:
+                        logger.error(f"❌ No MRR column found in: {list(detailed_df.columns)}")
+                        has_data = False
+                    elif not payout_col:
+                        logger.error(f"❌ No Payout column found in: {list(detailed_df.columns)}")
+                        has_data = False
+                    elif not owner_col:
+                        logger.error(f"❌ No Owner column found in: {list(detailed_df.columns)}")
+                        has_data = False
+                    else:
+                        # Convert numeric columns to proper numeric types (they may be strings from Genie)
+                        detailed_df_copy = detailed_df.copy()
+                        detailed_df_copy[mrr_col] = pd.to_numeric(detailed_df_copy[mrr_col], errors='coerce')
+                        detailed_df_copy[payout_col] = pd.to_numeric(detailed_df_copy[payout_col], errors='coerce')
+                        
+                        logger.info(f"🔢 Converted columns to numeric: {mrr_col}={detailed_df_copy[mrr_col].dtype}, {payout_col}={detailed_df_copy[payout_col].dtype}")
+                        
+                        # Create pivot table with detected columns
+                        pivot_df = detailed_df_copy.groupby(owner_col).agg({
+                            mrr_col: 'sum',
+                            payout_col: 'sum'
+                        }).reset_index()
+                        
+                        # Sort by MRR descending
+                        pivot_df = pivot_df.sort_values(mrr_col, ascending=False)
+                        
+                        # Rename columns to standardized names for display
+                        pivot_df = pivot_df.rename(columns={
+                            owner_col: 'Opportunity_Owner',
+                            mrr_col: 'Total_MRR',
+                            payout_col: 'Incentive_Payout'
+                        })
+                        
+                        logger.info(f"✅ Created pivot table with {len(pivot_df)} owners")
+                        logger.info(f"📊 Pivot columns: {list(pivot_df.columns)}")
+                        
+                        # Display the pivot data with chart
+                        has_data = True
+                        df = pivot_df
+                else:
+                    has_data = False
+                    logger.error("❌ No detailed voice data available for pivot")
+                
+                # Display pivot data with chart (if available)
+                if has_data:
+                    # Display data table
+                    st.subheader("📊 Query Results")
+                    st.dataframe(df, use_container_width=True)
+                    
+                    # Create chart with both MRR and Payout
+                    mrr_col = 'Total_MRR'
+                    payout_col = 'Incentive_Payout'
+                    owner_col = 'Opportunity_Owner'
+                    
+                    logger.info(f"🎨 Creating chart with MRR={mrr_col}, Payout={payout_col}")
+                    st.subheader("📈 MRR and Incentive Payout")
+                    
+                    # Create grouped bar chart (matching Genie UI style)
+                    fig = go.Figure()
+                    
+                    # Add MRR bars (teal/blue like Genie)
+                    fig.add_trace(go.Bar(
+                        x=df[owner_col],
+                        y=df[mrr_col],
+                        name='Sum_MRR',
+                        marker_color='rgb(31, 119, 180)',  # Blue matching Genie
+                        text=df[mrr_col].apply(lambda x: f'${x:,.0f}'),
+                        textposition='outside'
+                    ))
+                    
+                    # Add Incentive Payout bars (orange/yellow like Genie)
+                    fig.add_trace(go.Bar(
+                        x=df[owner_col],
+                        y=df[payout_col],
+                        name='Sum_Incentive_Payout',
+                        marker_color='rgb(255, 127, 14)',  # Orange matching Genie
+                        text=df[payout_col].apply(lambda x: f'${x:,.0f}'),
+                        textposition='outside'
+                    ))
+                    
+                    fig.update_layout(
+                        title=f"Sum of MRR and Incentive Payout by Opportunity Owner",
+                        xaxis_title="Opportunity Owner",
+                        yaxis_title="Amount ($)",
+                        barmode='group',
+                        height=500,
+                        xaxis={'tickangle': -45},
+                        showlegend=True,
+                        legend=dict(
+                            orientation="h",
+                            yanchor="bottom",
+                            y=1.02,
+                            xanchor="right",
+                            x=1
+                        ),
+                        font=dict(size=12)
+                    )
+                    
+                    st.plotly_chart(fig, use_container_width=True)
+                    
+                    # Email and CSV download buttons
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        # Format for email copy
+                        with st.popover("📧 Copy for Email", use_container_width=True):
+                            st.caption("**Summary by Opportunity Owner**")
+                            st.caption("*Voice Activations Incentive Results*")
+                            st.caption("")
+                            
+                            # Create markdown table for email
+                            email_content = df.to_markdown(index=False)
+                            st.code(email_content, language=None)
+                            
+                            st.caption("")
+                            st.caption("💡 Tip: Click the copy button above to copy the formatted table")
+                    
+                    with col2:
+                        # CSV download
+                        csv_data = df.to_csv(index=False)
+                        st.download_button(
+                            label="📥 Download CSV",
+                            data=csv_data,
+                            file_name="voice_incentives_summary.csv",
+                            mime="text/csv",
+                            key="download_pivot_csv",
+                            use_container_width=True
+                        )
+                else:
+                    st.error("Unable to create pivot table - detailed data not available")
                 
                 # Add supporting data download button if detailed data exists
                 if hasattr(st.session_state, 'detailed_voice_data'):
@@ -631,14 +798,6 @@ Show the results sorted by Total MRR descending."""
                         key="download_supporting_data",
                         use_container_width=False
                     )
-                
-                # If no structured data, show text response
-                if not has_data:
-                    # Filter out SQL queries for clean demo view
-                    clean_answer = re.sub(r'```sql.*?```', '', answer, flags=re.DOTALL)
-                    clean_answer = re.sub(r'\*\*SQL Query:\*\*.*?(?=\n\n|\Z)', '', clean_answer, flags=re.DOTALL)
-                    clean_answer = clean_answer.strip()
-                    st.markdown(clean_answer)
             
             st.session_state.demo_auto_displayed += 1
             
@@ -1277,11 +1436,12 @@ elif view_mode == "⚙️ Tech":
     ```
     User Query
         ↓
-    🤖 Orchestrator (Llama 3.1 70B)
+    🤖 Orchestrator (Selectable: GPT-5.1, Claude, Llama, etc.)
         ↓
         ├─→ 🧠 Genie Agent: Sales Performance
         ├─→ 🧠 Genie Agent: Analytics & Winners  
         ├─→ 🧠 Genie Agent: Market Intelligence
+        ├─→ 🧠 Genie Agent: Voice Activations (Active)
         ├─→ 🌐 Web Search Agent (Competitor Intel)
         └─→ 📊 Foundation Model (Synthesis)
         ↓
@@ -1308,15 +1468,16 @@ elif view_mode == "⚙️ Tech":
             st.markdown("### 🤖 Agent Tools")
             st.markdown("""
     **Genie** (Natural Language to SQL)
-    - 3 specialized spaces
+    - 4 specialized spaces (1 currently active)
     - Real-time SQL query generation
     - Data exploration via conversation
     
-    **Foundation Models** (LLM Platform)
-    - Meta Llama 3.1 70B (Orchestrator)
-    - GPT-5.1 (Synthesis)
-    - Claude Opus 4.1 (Available)
-    - Gemini 2.5 (Available)
+    **Foundation Models** (Selectable via UI)
+    - GPT-5.1 (Default orchestrator)
+    - Claude Sonnet 4.5
+    - Meta Llama 3.3 70B / 3.1 405B
+    - Gemini 2.5 Pro/Flash
+    - 15+ models available
     
     **Databricks Apps**
     - Streamlit hosting
@@ -1350,21 +1511,21 @@ elif view_mode == "⚙️ Tech":
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            st.info("""
+            st.info(f"""
     **🧠 Orchestrator**
     
-    **Model:** Llama 3.1 70B Instruct
+    **Model:** {st.session_state.get('orchestrator_model', 'databricks-gpt-5-1')}
     
     **Role:** Query routing, intent analysis
     
-    **Why:** Fast, capable reasoning
+    **Why:** Selectable via UI for optimal performance
     """)
         
         with col2:
-            st.success("""
+            st.success(f"""
     **🤖 Synthesis**
     
-    **Model:** GPT-5.1 (mock)
+    **Model:** Same as orchestrator (user-selectable)
     
     **Role:** Combine multi-source results
     
@@ -1468,18 +1629,22 @@ elif view_mode == "⚙️ Tech":
         st.markdown("""
     | Component | Technology | Purpose |
     |-----------|------------|---------|
-    | **Frontend** | Streamlit | Interactive UI |
+    | **Frontend** | Streamlit 1.x | Interactive UI |
     | **Hosting** | Databricks Apps | Secure deployment |
-    | **AI Orchestration** | Llama 3.1 70B | Query routing |
-    | **Data Query** | Genie (3 spaces) | Natural language to SQL |
-    | **Synthesis** | Foundation Models | Multi-source integration |
+    | **AI Orchestration** | 15+ Foundation Models (user-selectable) | Query routing & synthesis |
+    | **Data Query** | Genie (4 spaces, 1 active) | Natural language to SQL |
+    | **Competitor Intel** | Custom Web Search Agent | Mock competitor data synthesis |
     | **Data Platform** | Unity Catalog | Governance & storage |
-    | **Compute** | SQL Warehouse | Serverless query engine |
-    | **Auth** | PAT Token | API authentication |
+    | **Compute** | SQL Warehouse (serverless) | Real-time query execution |
+    | **Auth** | PAT Token + OAuth M2M | API authentication |
     | **Version Control** | GitHub | Code management |
     | **Languages** | Python 3.11 | Application logic |
+    | **Visualization** | Plotly | Interactive charts |
     
-    **Key Innovation:** Smart routing with graceful fallbacks ensures queries succeed even if individual agents fail.
+    **Key Innovations:** 
+    - Smart routing with graceful fallbacks ensures queries succeed even if individual agents fail
+    - Dynamic model selection allows performance tuning in real-time
+    - Multi-agent caching delivers 90%+ faster demo repeats
     """)
         
         # How to check Genie calls in Databricks
