@@ -35,7 +35,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.9.1-SPIFFIT"  # 📚 Updated: Architecture & Tech Stack documentation accuracy
+APP_VERSION = "v3.9.2-SPIFFIT"  # 🐛 Debug: Added logging for chart display + fixed button UX
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"🎸 Spiffit v{APP_VERSION} - Deployed: {DEPLOYMENT_TIME}")
 
@@ -209,14 +209,24 @@ def extract_and_display_genie_data(answer_text, key_prefix="data", display_ui=Tr
             mrr_col = None
             payout_col = None
             
+            logger.info(f"📊 Available columns: {list(df.columns)}")
+            
             for col in df.columns:
                 col_lower = col.lower().replace('_', '').replace(' ', '')
                 if 'mrr' in col_lower and not mrr_col:
                     mrr_col = col
+                    logger.info(f"✅ Found MRR column: {col}")
                 if ('incentive' in col_lower or 'payout' in col_lower) and not payout_col:
                     payout_col = col
+                    logger.info(f"✅ Found Payout column: {col}")
+            
+            if not mrr_col:
+                logger.warning(f"❌ No MRR column found in: {list(df.columns)}")
+            if not payout_col:
+                logger.warning(f"❌ No Payout column found in: {list(df.columns)}")
             
             if display_ui and mrr_col and payout_col:
+                logger.info(f"🎨 Creating chart with MRR={mrr_col}, Payout={payout_col}")
                 st.subheader("📈 MRR and Incentive Payout")
                 
                 # Prepare data for chart
@@ -279,6 +289,14 @@ def extract_and_display_genie_data(answer_text, key_prefix="data", display_ui=Tr
                 )
                 
                 st.plotly_chart(fig, use_container_width=True)
+            elif display_ui:
+                # Show warning if chart can't be created
+                if not mrr_col and not payout_col:
+                    logger.warning(f"⚠️ Cannot create chart - missing both MRR and Payout columns")
+                elif not mrr_col:
+                    logger.warning(f"⚠️ Cannot create chart - missing MRR column")
+                elif not payout_col:
+                    logger.warning(f"⚠️ Cannot create chart - missing Payout column")
             
             # Add download buttons (only if displaying UI)
             if display_ui:
