@@ -35,7 +35,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.8.0-SPIFFIT"  # 🎯 Dynamic orchestrator model selection + UI in Demo tab
+APP_VERSION = "v3.8.3-SPIFFIT"  # 🐛 Fixed: Added caching to automated demo's next month query
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"🎸 Spiffit v{APP_VERSION} - Deployed: {DEPLOYMENT_TIME}")
 
@@ -506,7 +506,17 @@ if view_mode == "🎬 Demo":
         # Step 1: Agent greets - show this first!
         greeting_msg = {
             "role": "assistant",
-            "content": "👋 **Good afternoon!** - time to send the August SPIFF numbers to the compensation team.\n\nLet me calculate the Voice Activations incentives for you..."
+            "content": """👋 **Good afternoon! It's September 5th** - here are key upcoming dates:
+
+**📅 August Incentives Timeline** (Processed in September)
+- **Incentives due to Comp Team:** 9/17
+- **Xactly Cut Off Date:** 9/24
+- **Xactly Upload Date:** 9/25
+- **Manual Payroll Cut Off Date:** 10/7
+
+**Ready to send the August SPIFF numbers to the compensation team?**
+
+Let me calculate the Voice Activations incentives for you..."""
         }
         st.session_state.demo_messages.append(greeting_msg)
         
@@ -656,7 +666,14 @@ Show the results sorted by Total MRR descending."""
         
         with st.spinner("🤔 Analyzing sales data and competitor intelligence..."):
             try:
-                result = st.session_state.multi_agent.query("Based on our sales data and competitor intel, what SPIFFs should we offer next month?")
+                # Check cache for next month's play (demo performance)
+                if "demo_next_month_cache" in st.session_state:
+                    result = st.session_state.demo_next_month_cache
+                    time.sleep(3)  # Realistic delay for cached result
+                else:
+                    result = st.session_state.multi_agent.query("Based on our sales data and competitor intel, what SPIFFs should we offer next month?")
+                    st.session_state.demo_next_month_cache = result
+                
                 answer = result["answer"]
                 
                 # Filter out SQL queries for clean demo view
@@ -759,7 +776,34 @@ Show the results sorted by Total MRR descending."""
         with st.chat_message("assistant"):
             with st.spinner("🤔 Analyzing..."):
                 try:
-                    result = st.session_state.multi_agent.query(user_input)
+                    # Check for cached results (for demo performance)
+                    result = None
+                    cached = False
+                    
+                    # Beat the Competition query
+                    if "competitors offering and how should we beat them" in user_input.lower():
+                        if "demo_beat_competition_cache" in st.session_state:
+                            result = st.session_state.demo_beat_competition_cache
+                            cached = True
+                            time.sleep(3)  # Realistic delay for cached result
+                        else:
+                            result = st.session_state.multi_agent.query(user_input)
+                            st.session_state.demo_beat_competition_cache = result
+                    
+                    # Next Month's Play query
+                    elif "based on our sales data and competitor intel" in user_input.lower():
+                        if "demo_next_month_cache" in st.session_state:
+                            result = st.session_state.demo_next_month_cache
+                            cached = True
+                            time.sleep(3)  # Realistic delay for cached result
+                        else:
+                            result = st.session_state.multi_agent.query(user_input)
+                            st.session_state.demo_next_month_cache = result
+                    
+                    # All other queries (no caching)
+                    else:
+                        result = st.session_state.multi_agent.query(user_input)
+                    
                     answer = result["answer"]
                     
                     # Filter out SQL queries for clean demo view
