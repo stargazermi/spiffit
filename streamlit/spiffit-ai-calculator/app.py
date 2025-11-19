@@ -11,6 +11,7 @@ import streamlit as st
 import os
 import logging
 import re
+import time
 from datetime import datetime
 from io import StringIO
 import pandas as pd
@@ -34,10 +35,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.3.4-SPIFFIT"  # 🔧 Fixed result.manifest AttributeError!
+APP_VERSION = "v3.8.0-SPIFFIT"  # 🎯 Dynamic orchestrator model selection + UI in Demo tab
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-logger.info(f"App starting - Version: {APP_VERSION}, Deployment: {DEPLOYMENT_TIME}")
-logger.info("🎸 When a problem comes along... you must Spiff It! 🎸")
+logger.info(f"🎸 Spiffit v{APP_VERSION} - Deployed: {DEPLOYMENT_TIME}")
 
 # Page configuration
 st.set_page_config(
@@ -141,13 +141,17 @@ def extract_and_display_genie_data(answer_text, key_prefix="data", display_ui=Tr
     
     Returns: (has_data: bool, df: pd.DataFrame or None)
     """
+    # ⏱️ TIMING: Data extraction
+    import time
+    start_time = time.time()
+    logger.info(f"⏱️ [START] Data extraction for {key_prefix}")
+    
     # Try to extract SQL query from answer
     sql_match = re.search(r'```sql\n(.*?)\n```', answer_text, re.DOTALL)
     if not sql_match:
         return False, None
     
     sql_query = sql_match.group(1).strip()
-    logger.info(f"📊 Extracted SQL query from Genie response")
     
     try:
         # Execute query to get raw data
@@ -160,7 +164,6 @@ def extract_and_display_genie_data(answer_text, key_prefix="data", display_ui=Tr
             token=os.getenv("DATABRICKS_TOKEN"),
             auth_type='pat'
         )
-        logger.info("🔐 Using PAT token authentication (forced)")
         
         warehouse_id = os.getenv("SQL_WAREHOUSE_ID", "0962fa4cf0922125")
         
@@ -181,22 +184,19 @@ def extract_and_display_genie_data(answer_text, key_prefix="data", display_ui=Tr
             if hasattr(statement, 'manifest') and hasattr(statement.manifest, 'schema'):
                 if hasattr(statement.manifest.schema, 'columns'):
                     columns = [col.name for col in statement.manifest.schema.columns]
-                    logger.info(f"✅ Got columns from statement.manifest.schema")
             
             # Try: statement.result.manifest.schema.columns
             if not columns and hasattr(statement.result, 'manifest'):
                 if hasattr(statement.result.manifest, 'schema') and hasattr(statement.result.manifest.schema, 'columns'):
                     columns = [col.name for col in statement.result.manifest.schema.columns]
-                    logger.info(f"✅ Got columns from statement.result.manifest.schema")
             
             # Fallback: generate generic column names
             if not columns:
                 columns = [f"Column_{i}" for i in range(len(data_array[0]) if data_array else 0)]
-                logger.warning(f"⚠️ Using generic column names")
+                logger.warning("Using generic column names - schema not found")
             
             # Create DataFrame
             df = pd.DataFrame(data_array, columns=columns)
-            logger.info(f"✅ Created DataFrame with {len(df)} rows and {len(df.columns)} columns")
             
             # Only display UI if requested
             if display_ui:
@@ -282,13 +282,22 @@ def extract_and_display_genie_data(answer_text, key_prefix="data", display_ui=Tr
                     )
                 
                 with col2:
-                    # Copy for email
-                    email_format = f"{title}\n{'='*60}\n\n"
-                    email_format += df.to_string(index=False)
-                    
-                    if st.button("📋 Copy for Email", key=f"copy_email_{key_prefix}", use_container_width=True):
-                        st.toast("✅ Copied to clipboard!")
+                    # Copy for email - use popover (no rerun needed!)
+                    with st.popover("📋 Copy for Email", use_container_width=True):
+                        st.markdown("### 📧 Email-Ready Format")
+                        st.caption("Copy the text below to paste into your email:")
+                        
+                        # Create nicely formatted email content
+                        email_format = f"**{title}**\n\n"
+                        email_format += df.to_markdown(index=False)
+                        
+                        # Display in code block for easy copying
                         st.code(email_format, language=None)
+                        st.info("💡 Click inside and press Ctrl+A, then Ctrl+C to copy")
+            
+            # ⏱️ TIMING: Data extraction complete
+            elapsed = time.time() - start_time
+            logger.info(f"⏱️ [END] Data extraction completed in {elapsed:.2f}s ({len(df)} rows)")
             
             return True, df
             
@@ -302,7 +311,7 @@ def extract_and_display_genie_data(answer_text, key_prefix="data", display_ui=Tr
 
 # Initialize AI components
 @st.cache_resource
-def init_ai():
+def init_ai(orchestrator_model="databricks-gpt-5-1"):
     """Initialize AI helper and parser (cached)"""
     # Read Genie space ID from environment variable
     genie_space_id = os.getenv("GENIE_SPACE_ID")
@@ -343,14 +352,18 @@ def init_ai():
         genie_analytics_id=os.getenv("GENIE_ANALYTICS_SPACE_ID"),
         genie_market_id=os.getenv("GENIE_MARKET_SPACE_ID"),
         genie_voice_activations_id=os.getenv("GENIE_VOICE_ACTIVATIONS_SPACE_ID"),
-        orchestrator_model="databricks-gpt-5-1"  # Use GPT-5.1 from serving endpoints
+        orchestrator_model=orchestrator_model  # Use selected model for routing & synthesis
     )
     
     return ai, parser, multi_agent
 
+# Initialize orchestrator model selection
+if 'orchestrator_model' not in st.session_state:
+    st.session_state.orchestrator_model = "databricks-gpt-5-1"  # Default to GPT-5.1
+
 # Only initialize if we're past the config page
 if 'ai' not in st.session_state:
-    st.session_state.ai, st.session_state.parser, st.session_state.multi_agent = init_ai()
+    st.session_state.ai, st.session_state.parser, st.session_state.multi_agent = init_ai(st.session_state.orchestrator_model)
 
 # Main app - "Spiff It" theme!
 st.title("⚡ Spiffit - When SPIFFs Get Tough, You Must Spiff It!")
@@ -395,6 +408,64 @@ with st.sidebar:
         
         if st.button("🎯 Next Month's Play", use_container_width=True, key="demo_sidebar_next"):
             st.session_state.demo_input = "Based on our sales data and competitor intel, what SPIFFs should we offer next month?"
+        
+        st.markdown("---")
+        st.markdown("#### 🤖 AI Brain Settings:")
+        
+        # Orchestrator model selector
+        model_options = [
+            # 🏆 Tier 1: Best Overall (Recommended)
+            "databricks-gpt-5-1",                           # ⭐ GPT-5.1 (Latest OpenAI)
+            "databricks-claude-sonnet-4-5",                 # ⭐ Claude Sonnet 4.5 (Latest Anthropic)
+            "databricks-meta-llama-3-3-70b-instruct",       # ⭐ Llama 3.3 70B (Newest Meta)
+            "databricks-llama-4-maverick",                  # ⭐ Llama 4 Maverick (Cutting edge)
+            
+            # 💎 Tier 2: Premium (Most Powerful)
+            "databricks-claude-opus-4-1",                   # Most powerful reasoning
+            "databricks-gpt-5",                             # GPT-5
+            "databricks-meta-llama-3-1-405b-instruct",      # Largest model (405B)
+            "databricks-gemini-2-5-pro",                    # Google Gemini 2.5 Pro
+            "databricks-gpt-oss-120b",                      # Custom GPT 120B
+            
+            # ⚡ Tier 3: Fast & Efficient
+            "databricks-gpt-5-mini",                        # GPT-5 Mini
+            "databricks-gpt-5-nano",                        # GPT-5 Nano (Fastest)
+            "databricks-gemini-2-5-flash",                  # Gemini Flash (Fast)
+            "databricks-meta-llama-3-1-8b-instruct",        # Llama 8B (Budget)
+            
+            # 🎨 Other Options
+            "databricks-claude-opus-4",                     # Claude Opus 4
+            "databricks-claude-sonnet-4",                   # Claude Sonnet 4
+            "databricks-claude-3-7-sonnet",                 # Claude 3.7 Sonnet
+            "databricks-gpt-oss-20b",                       # Custom GPT 20B
+            "databricks-gemma-3-12b",                       # Gemma 3 12B
+        ]
+        
+        # Find current model index
+        try:
+            current_index = model_options.index(st.session_state.orchestrator_model)
+        except ValueError:
+            current_index = 0  # Default to GPT-5.1 if not found
+        
+        orchestrator_model_demo = st.selectbox(
+            "Agent Brain (Orchestrator)",
+            model_options,
+            index=current_index,
+            key="orchestrator_demo",
+            help="Which LLM the multi-agent uses for routing & synthesis"
+        )
+        
+        # Update orchestrator model and reinitialize if changed
+        if orchestrator_model_demo != st.session_state.orchestrator_model:
+            st.session_state.orchestrator_model = orchestrator_model_demo
+            # Clear cache and reinitialize with new model
+            st.cache_resource.clear()
+            st.session_state.ai, st.session_state.parser, st.session_state.multi_agent = init_ai(orchestrator_model_demo)
+            st.success(f"🔄 Switched to {orchestrator_model_demo}")
+            st.rerun()
+        
+        st.caption("🧠 **Multi-Agent Always Active:**")
+        st.caption("✅ Genie Spaces  \n✅ Web Search  \n✅ Smart Routing")
 
 # ============================================================
 # 🎬 DEMO VIEW - Clean presentation view with automated story
@@ -459,7 +530,17 @@ o Customers with existing Voice products who are adding additional, incremental 
 • Reporting: The Net MRR is specifically separated from Renewal MRR to ensure that only new or incremental VOIP sales are counted, excluding renewals or migrations with no additional revenue gain"""
             
             try:
-                result = st.session_state.multi_agent.query(voice_prompt)
+                # ⚡ PERFORMANCE: Cache results for instant demo replay
+                cache_key = "demo_voice_detail_cache"
+                if cache_key in st.session_state:
+                    logger.info("⚡ Using cached Voice Activations results (with 3s delay for demo feel)")
+                    time.sleep(3)  # Small delay so it doesn't look pre-recorded
+                    result = st.session_state[cache_key]
+                else:
+                    logger.info("🔄 First run - querying Genie (~30s)...")
+                    result = st.session_state.multi_agent.query(voice_prompt)
+                    st.session_state[cache_key] = result  # Cache for next time
+                
                 answer = result["answer"]
                 
                 # Store detailed data but DON'T display it
@@ -482,20 +563,9 @@ o Customers with existing Voice products who are adding additional, incremental 
                     st.markdown(error_msg["content"])
                 st.session_state.demo_auto_displayed += 1
         
-        # Step 2: Create pivot table summary by opportunity owner  
-        pivot_msg = {
-            "role": "assistant",
-            "content": "📊 **Here's the summary by Opportunity Owner:**\n\n*This is what you'll send to the compensation team*"
-        }
-        st.session_state.demo_messages.append(pivot_msg)
-        
-        # Display pivot message
-        with st.chat_message("assistant"):
-            st.markdown(pivot_msg["content"])
-        st.session_state.demo_auto_displayed += 1
-        
-        with st.spinner("🤔 Creating summary by Opportunity Owner..."):
-            try:
+        # Step 2: Create pivot table summary by opportunity owner
+        try:
+            with st.spinner("🤔 Creating summary by Opportunity Owner..."):
                 # Query for pivot table grouped by opportunity owner
                 pivot_prompt = """Create a pivot table from the Voice Opportunities data that:
 - Groups by Opportunity Owner
@@ -503,51 +573,74 @@ o Customers with existing Voice products who are adding additional, incremental 
 - Sums the Incentive Payout for each owner
 Show the results sorted by Total MRR descending."""
                 
-                result = st.session_state.multi_agent.query(pivot_prompt)
+                # ⚡ PERFORMANCE: Cache pivot results for instant demo replay
+                cache_key = "demo_voice_pivot_cache"
+                if cache_key in st.session_state:
+                    logger.info("⚡ Using cached pivot results (with 2s delay for demo feel)")
+                    time.sleep(2)  # Small delay so it doesn't look pre-recorded
+                    result = st.session_state[cache_key]
+                else:
+                    logger.info("🔄 First run - querying Genie for pivot...")
+                    result = st.session_state.multi_agent.query(pivot_prompt)
+                    st.session_state[cache_key] = result  # Cache for next time
+                
                 answer = result["answer"]
                 
+                # Store the result message
                 result_msg = {
                     "role": "assistant",
                     "content": answer
                 }
                 st.session_state.demo_messages.append(result_msg)
+            
+            # NOW display the message and data together (after spinner completes)
+            pivot_msg = {
+                "role": "assistant",
+                "content": "📊 **Here's the summary by Opportunity Owner:**\n\n*This is what you'll send to the compensation team*"
+            }
+            st.session_state.demo_messages.append(pivot_msg)
+            
+            with st.chat_message("assistant"):
+                # Display the message
+                st.markdown(pivot_msg["content"])
                 
-                # Display result immediately
-                with st.chat_message("assistant"):
-                    # Try to extract and display pivot data with chart
-                    has_data, df = extract_and_display_genie_data(answer, key_prefix="voice_pivot")
-                    
-                    # Add supporting data download button if detailed data exists
-                    if hasattr(st.session_state, 'detailed_voice_data'):
-                        st.markdown("---")
-                        st.caption("📎 **Supporting Data** (detailed breakdown by opportunity ID)")
-                        detailed_csv = st.session_state.detailed_voice_data.to_csv(index=False)
-                        st.download_button(
-                            label="📥 Download Supporting Data CSV",
-                            data=detailed_csv,
-                            file_name="voice_incentives_detailed_supporting_data.csv",
-                            mime="text/csv",
-                            key="download_supporting_data",
-                            use_container_width=False
-                        )
-                    
-                    # If no structured data, show text response
-                    if not has_data:
-                        # Filter out SQL queries for clean demo view
-                        clean_answer = re.sub(r'```sql.*?```', '', answer, flags=re.DOTALL)
-                        clean_answer = re.sub(r'\*\*SQL Query:\*\*.*?(?=\n\n|\Z)', '', clean_answer, flags=re.DOTALL)
-                        clean_answer = clean_answer.strip()
-                        st.markdown(clean_answer)
-                st.session_state.demo_auto_displayed += 1
-            except Exception as e:
-                error_msg = {
-                    "role": "assistant",
-                    "content": f"⚠️ Pivot data loading... (Error: {str(e)})"
-                }
-                st.session_state.demo_messages.append(error_msg)
-                with st.chat_message("assistant"):
-                    st.markdown(error_msg["content"])
-                st.session_state.demo_auto_displayed += 1
+                # Then immediately display the data
+                # Try to extract and display pivot data with chart
+                has_data, df = extract_and_display_genie_data(answer, key_prefix="voice_pivot")
+                
+                # Add supporting data download button if detailed data exists
+                if hasattr(st.session_state, 'detailed_voice_data'):
+                    st.markdown("---")
+                    st.caption("📎 **Supporting Data** (detailed breakdown by opportunity ID)")
+                    detailed_csv = st.session_state.detailed_voice_data.to_csv(index=False)
+                    st.download_button(
+                        label="📥 Download Supporting Data CSV",
+                        data=detailed_csv,
+                        file_name="voice_incentives_detailed_supporting_data.csv",
+                        mime="text/csv",
+                        key="download_supporting_data",
+                        use_container_width=False
+                    )
+                
+                # If no structured data, show text response
+                if not has_data:
+                    # Filter out SQL queries for clean demo view
+                    clean_answer = re.sub(r'```sql.*?```', '', answer, flags=re.DOTALL)
+                    clean_answer = re.sub(r'\*\*SQL Query:\*\*.*?(?=\n\n|\Z)', '', clean_answer, flags=re.DOTALL)
+                    clean_answer = clean_answer.strip()
+                    st.markdown(clean_answer)
+            
+            st.session_state.demo_auto_displayed += 1
+            
+        except Exception as e:
+            error_msg = {
+                "role": "assistant",
+                "content": f"⚠️ Pivot data loading... (Error: {str(e)})"
+            }
+            st.session_state.demo_messages.append(error_msg)
+            with st.chat_message("assistant"):
+                st.markdown(error_msg["content"])
+            st.session_state.demo_auto_displayed += 1
         
         # Step 3: Follow up with "Next month's play" - show this immediately too!
         followup_msg = {
@@ -571,15 +664,46 @@ Show the results sorted by Total MRR descending."""
                 answer = re.sub(r'\*\*SQL Query:\*\*.*?(?=\n\n|\Z)', '', answer, flags=re.DOTALL)
                 answer = answer.strip()
                 
+                # Truncate the answer to show only intro (prevent auto-scroll)
+                # Strategy: Show first ~300 chars or first paragraph, whichever is shorter
+                
+                # Try splitting by double newline (paragraph break)
+                paragraphs = answer.split('\n\n')
+                
+                # If first paragraph is short, use it
+                if len(paragraphs) > 1 and len(paragraphs[0]) < 400:
+                    intro = paragraphs[0]
+                    full_detail = answer
+                # Otherwise, use first 300 characters + "..."
+                elif len(answer) > 300:
+                    # Find a good breaking point (end of sentence)
+                    intro = answer[:300]
+                    last_period = intro.rfind('. ')
+                    if last_period > 200:  # Only break at period if it's not too early
+                        intro = intro[:last_period + 1]
+                    else:
+                        intro = intro + "..."
+                    full_detail = answer
+                else:
+                    # Short response, show it all
+                    intro = answer
+                    full_detail = None
+                
                 result_msg = {
                     "role": "assistant",
-                    "content": answer
+                    "content": intro
                 }
                 st.session_state.demo_messages.append(result_msg)
                 
-                # Display result immediately
+                # Display truncated intro immediately
                 with st.chat_message("assistant"):
-                    st.markdown(result_msg["content"])
+                    st.markdown(intro)
+                    
+                    # If there's more content, show expander
+                    if full_detail and len(full_detail) > len(intro) + 50:
+                        with st.expander("📋 **Click to see full competitor analysis**"):
+                            st.markdown(full_detail)
+                
                 st.session_state.demo_auto_displayed += 1
             except Exception as e:
                 error_msg = {
@@ -706,38 +830,56 @@ elif view_mode == "⚙️ Tech":
         st.header("⚙️ Configuration")
         
         # Foundation Model for the orchestrator/agent brain
+        model_options_tech = [
+            # 🏆 Tier 1: Best Overall (Recommended)
+            "databricks-gpt-5-1",                           # ⭐ GPT-5.1 (Latest OpenAI)
+            "databricks-claude-sonnet-4-5",                 # ⭐ Claude Sonnet 4.5 (Latest Anthropic)
+            "databricks-meta-llama-3-3-70b-instruct",       # ⭐ Llama 3.3 70B (Newest Meta)
+            "databricks-llama-4-maverick",                  # ⭐ Llama 4 Maverick (Cutting edge)
+            
+            # 💎 Tier 2: Premium (Most Powerful)
+            "databricks-claude-opus-4-1",                   # Most powerful reasoning
+            "databricks-gpt-5",                             # GPT-5
+            "databricks-meta-llama-3-1-405b-instruct",      # Largest model (405B)
+            "databricks-gemini-2-5-pro",                    # Google Gemini 2.5 Pro
+            "databricks-gpt-oss-120b",                      # Custom GPT 120B
+            
+            # ⚡ Tier 3: Fast & Efficient
+            "databricks-gpt-5-mini",                        # GPT-5 Mini
+            "databricks-gpt-5-nano",                        # GPT-5 Nano (Fastest)
+            "databricks-gemini-2-5-flash",                  # Gemini Flash (Fast)
+            "databricks-meta-llama-3-1-8b-instruct",        # Llama 8B (Budget)
+            
+            # 🎨 Other Options
+            "databricks-claude-opus-4",                     # Claude Opus 4
+            "databricks-claude-sonnet-4",                   # Claude Sonnet 4
+            "databricks-claude-3-7-sonnet",                 # Claude 3.7 Sonnet
+            "databricks-gpt-oss-20b",                       # Custom GPT 20B
+            "databricks-gemma-3-12b",                       # Gemma 3 12B
+        ]
+        
+        # Find current model index
+        try:
+            current_index_tech = model_options_tech.index(st.session_state.orchestrator_model)
+        except ValueError:
+            current_index_tech = 0  # Default to GPT-5.1 if not found
+        
         model_choice = st.selectbox(
             "🤖 Agent Brain (Orchestrator)",
-            [
-                # 🏆 Tier 1: Best Overall (Recommended)
-                "databricks-gpt-5-1",                           # ⭐ GPT-5.1 (Latest OpenAI)
-                "databricks-claude-sonnet-4-5",                 # ⭐ Claude Sonnet 4.5 (Latest Anthropic)
-                "databricks-meta-llama-3-3-70b-instruct",       # ⭐ Llama 3.3 70B (Newest Meta)
-                "databricks-llama-4-maverick",                  # ⭐ Llama 4 Maverick (Cutting edge)
-                
-                # 💎 Tier 2: Premium (Most Powerful)
-                "databricks-claude-opus-4-1",                   # Most powerful reasoning
-                "databricks-gpt-5",                             # GPT-5
-                "databricks-meta-llama-3-1-405b-instruct",      # Largest model (405B)
-                "databricks-gemini-2-5-pro",                    # Google Gemini 2.5 Pro
-                "databricks-gpt-oss-120b",                      # Custom GPT 120B
-                
-                # ⚡ Tier 3: Fast & Efficient
-                "databricks-gpt-5-mini",                        # GPT-5 Mini
-                "databricks-gpt-5-nano",                        # GPT-5 Nano (Fastest)
-                "databricks-gemini-2-5-flash",                  # Gemini Flash (Fast)
-                "databricks-meta-llama-3-1-8b-instruct",        # Llama 8B (Budget)
-                
-                # 🎨 Other Options
-                "databricks-claude-opus-4",                     # Claude Opus 4
-                "databricks-claude-sonnet-4",                   # Claude Sonnet 4
-                "databricks-claude-3-7-sonnet",                 # Claude 3.7 Sonnet
-                "databricks-gpt-oss-20b",                       # Custom GPT 20B
-                "databricks-gemma-3-12b",                       # Gemma 3 12B
-            ],
+            model_options_tech,
+            index=current_index_tech,
+            key="orchestrator_tech",
             help="Which LLM the multi-agent uses for routing & synthesis (15 models available!)"
         )
-        st.session_state.ai.model_name = model_choice
+        
+        # Update orchestrator model and reinitialize if changed
+        if model_choice != st.session_state.orchestrator_model:
+            st.session_state.orchestrator_model = model_choice
+            # Clear cache and reinitialize with new model
+            st.cache_resource.clear()
+            st.session_state.ai, st.session_state.parser, st.session_state.multi_agent = init_ai(model_choice)
+            st.success(f"🔄 Switched to {model_choice}")
+            st.rerun()
         
         st.caption("🧠 **Multi-Agent Always Active:**")
         st.caption("✅ 4 Genie Spaces  \n✅ Web Search  \n✅ Smart Routing")
@@ -1443,7 +1585,6 @@ elif view_mode == "⚙️ Tech":
                 if st.session_state.ai.genie_space_id:
                     with st.spinner("Testing Genie connection..."):
                         try:
-                            logger.info("User clicked 'Test Genie Query' button")
                             response = st.session_state.ai.ask_question("Show me the top performers")
                             st.success("✅ Genie query successful!")
                             st.markdown("**📄 Response:**")

@@ -4,12 +4,16 @@ Orchestrates between Genie spaces and web search for comprehensive intelligence
 """
 
 import os
+import time
+import logging
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.serving import ChatMessage, ChatMessageRole
 from typing import Dict, List, Tuple
 from ai_helper import IncentiveAI
 from web_search_tool import CompetitorSearchTool
 import json
+
+logger = logging.getLogger(__name__)
 
 
 class MultiToolAgent:
@@ -99,8 +103,17 @@ class MultiToolAgent:
         Returns:
             Dict with results, tools used, and reasoning
         """
+        # ⏱️ TIMING: Overall multi-agent query
+        import time
+        overall_start = time.time()
+        logger.info(f"⏱️ [START] Multi-agent query processing")
+        
         # Step 1: Route to appropriate tool(s)
+        route_start = time.time()
+        logger.info(f"⏱️ [START] Smart routing")
         routing_decision = self._route_query(user_question)
+        route_elapsed = time.time() - route_start
+        logger.info(f"⏱️ [END] Smart routing completed in {route_elapsed:.2f}s -> {routing_decision['tools']}")
         
         # Step 2: Execute tool calls
         tool_results = {}
@@ -188,6 +201,10 @@ class MultiToolAgent:
             final_answer = "No tools were able to answer this question."
             tools_used = []
         
+        # ⏱️ TIMING: Overall query complete
+        overall_elapsed = time.time() - overall_start
+        logger.info(f"⏱️ [END] Multi-agent query completed in {overall_elapsed:.2f}s (used {len(tools_used)} tools)")
+        
         return {
             "answer": final_answer,
             "tools_used": tools_used,
@@ -216,14 +233,17 @@ Available tools:
 User question: "{question}"
 
 Analyze the question and determine which tool(s) should be called. Consider:
-1. Sales performance/quota/deals → genie_sales
-2. SPIFF winners/leaderboards/top performers → genie_analytics  
-3. Historical market data → genie_market
+1. Sales performance/quota/deals → genie_sales (or any available genie)
+2. SPIFF winners/leaderboards/top performers → genie_analytics (or any available genie)
+3. Historical market data → genie_market (or any available genie)
 4. Voice Activations/VOIP incentives/MRR payouts → genie_voice_activations
 5. Competitor programs/promotions → web_search
 6. Comprehensive/strategic questions → Call ALL relevant tools (prefer calling multiple)
 
-**IMPORTANT:** For comprehensive questions asking about "performance AND winners AND competitors", call ALL applicable tools.
+**IMPORTANT:** 
+- For comprehensive questions, call ALL applicable tools.
+- For generic or unclear questions, default to calling at least ONE genie tool (preferably genie_voice_activations if available).
+- If uncertain, it's better to call a tool than return nothing!
 
 Respond in JSON format:
 {{
@@ -232,10 +252,11 @@ Respond in JSON format:
 }}
 
 Examples:
-- "Who are our top performers?" → {{"tools": ["genie_sales", "genie_analytics"], "reasoning": "Need both sales data and leaderboard"}}
+- "Who are our top performers?" → {{"tools": ["genie_voice_activations"], "reasoning": "Query sales/performance data"}}
 - "What is AT&T offering?" → {{"tools": ["web_search"], "reasoning": "Competitor intelligence query"}}
-- "Compare our SPIFFs to Verizon" → {{"tools": ["genie_sales", "genie_analytics", "web_search"], "reasoning": "Need internal data + competitor intel"}}
-- "Should we increase budget?" → {{"tools": ["genie_sales", "genie_analytics", "genie_market", "web_search"], "reasoning": "Strategic decision needs all data sources"}}
+- "Compare our SPIFFs to Verizon" → {{"tools": ["genie_voice_activations", "web_search"], "reasoning": "Need internal data + competitor intel"}}
+- "Should we increase budget?" → {{"tools": ["genie_voice_activations", "web_search"], "reasoning": "Strategic decision needs all data sources"}}
+- "great" or generic queries → {{"tools": ["genie_voice_activations"], "reasoning": "Default to Genie for general queries"}}
 """
 
         try:
@@ -287,13 +308,21 @@ Examples:
             else:
                 tools.append("genie_sales")
         
-        # Default to sales if nothing matched
-        if not tools and self.genie_sales:
-            tools.append("genie_sales")
+        # Default to Voice Activations Genie if nothing matched
+        if not tools:
+            if self.genie_voice_activations:
+                tools.append("genie_voice_activations")
+            elif self.genie_sales:
+                tools.append("genie_sales")
+            elif self.genie_analytics:
+                tools.append("genie_analytics")
+            elif self.genie_market:
+                tools.append("genie_market")
+            # If still no Genie available, at least we tried!
         
         return {
             "tools": tools,
-            "reasoning": "Fallback keyword-based routing"
+            "reasoning": "Fallback keyword-based routing (defaulting to available Genie)"
         }
     
     def _synthesize_results(self, question: str, tool_results: Dict, routing_reasoning: str) -> str:
