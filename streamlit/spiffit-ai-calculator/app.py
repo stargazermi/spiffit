@@ -35,7 +35,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.8.1-SPIFFIT"  # ⚡ Added caching for Beat Competition & Next Month queries
+APP_VERSION = "v3.8.2-SPIFFIT"  # 📅 Enhanced greeting with incentive timeline dates
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"🎸 Spiffit v{APP_VERSION} - Deployed: {DEPLOYMENT_TIME}")
 
@@ -506,7 +506,17 @@ if view_mode == "🎬 Demo":
         # Step 1: Agent greets - show this first!
         greeting_msg = {
             "role": "assistant",
-            "content": "👋 **Good afternoon!** - time to send the August SPIFF numbers to the compensation team.\n\nLet me calculate the Voice Activations incentives for you..."
+            "content": """👋 **Good afternoon! It's September 5th** - here are key upcoming dates:
+
+**📅 August Incentives Timeline** (Processed in September)
+- **Incentives due to Comp Team:** 9/17
+- **Xactly Cut Off Date:** 9/24
+- **Xactly Upload Date:** 9/25
+- **Manual Payroll Cut Off Date:** 10/7
+
+**Ready to send the August SPIFF numbers to the compensation team?**
+
+Let me calculate the Voice Activations incentives for you..."""
         }
         st.session_state.demo_messages.append(greeting_msg)
         
