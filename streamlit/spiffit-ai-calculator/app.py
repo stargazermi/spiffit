@@ -35,7 +35,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.8.2-SPIFFIT"  # 📅 Enhanced greeting with incentive timeline dates
+APP_VERSION = "v3.8.3-SPIFFIT"  # 🐛 Fixed: Added caching to automated demo's next month query
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"🎸 Spiffit v{APP_VERSION} - Deployed: {DEPLOYMENT_TIME}")
 
@@ -666,7 +666,14 @@ Show the results sorted by Total MRR descending."""
         
         with st.spinner("🤔 Analyzing sales data and competitor intelligence..."):
             try:
-                result = st.session_state.multi_agent.query("Based on our sales data and competitor intel, what SPIFFs should we offer next month?")
+                # Check cache for next month's play (demo performance)
+                if "demo_next_month_cache" in st.session_state:
+                    result = st.session_state.demo_next_month_cache
+                    time.sleep(3)  # Realistic delay for cached result
+                else:
+                    result = st.session_state.multi_agent.query("Based on our sales data and competitor intel, what SPIFFs should we offer next month?")
+                    st.session_state.demo_next_month_cache = result
+                
                 answer = result["answer"]
                 
                 # Filter out SQL queries for clean demo view
