@@ -35,7 +35,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.9.0-SPIFFIT"  # 📊 Enhanced: Genie-style bar chart with value labels & colors
+APP_VERSION = "v3.9.1-SPIFFIT"  # 📚 Updated: Architecture & Tech Stack documentation accuracy
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"🎸 Spiffit v{APP_VERSION} - Deployed: {DEPLOYMENT_TIME}")
 
@@ -1301,11 +1301,12 @@ elif view_mode == "⚙️ Tech":
     ```
     User Query
         ↓
-    🤖 Orchestrator (Llama 3.1 70B)
+    🤖 Orchestrator (Selectable: GPT-5.1, Claude, Llama, etc.)
         ↓
         ├─→ 🧠 Genie Agent: Sales Performance
         ├─→ 🧠 Genie Agent: Analytics & Winners  
         ├─→ 🧠 Genie Agent: Market Intelligence
+        ├─→ 🧠 Genie Agent: Voice Activations (Active)
         ├─→ 🌐 Web Search Agent (Competitor Intel)
         └─→ 📊 Foundation Model (Synthesis)
         ↓
@@ -1332,15 +1333,16 @@ elif view_mode == "⚙️ Tech":
             st.markdown("### 🤖 Agent Tools")
             st.markdown("""
     **Genie** (Natural Language to SQL)
-    - 3 specialized spaces
+    - 4 specialized spaces (1 currently active)
     - Real-time SQL query generation
     - Data exploration via conversation
     
-    **Foundation Models** (LLM Platform)
-    - Meta Llama 3.1 70B (Orchestrator)
-    - GPT-5.1 (Synthesis)
-    - Claude Opus 4.1 (Available)
-    - Gemini 2.5 (Available)
+    **Foundation Models** (Selectable via UI)
+    - GPT-5.1 (Default orchestrator)
+    - Claude Sonnet 4.5
+    - Meta Llama 3.3 70B / 3.1 405B
+    - Gemini 2.5 Pro/Flash
+    - 15+ models available
     
     **Databricks Apps**
     - Streamlit hosting
@@ -1374,21 +1376,21 @@ elif view_mode == "⚙️ Tech":
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            st.info("""
+            st.info(f"""
     **🧠 Orchestrator**
     
-    **Model:** Llama 3.1 70B Instruct
+    **Model:** {st.session_state.get('orchestrator_model', 'databricks-gpt-5-1')}
     
     **Role:** Query routing, intent analysis
     
-    **Why:** Fast, capable reasoning
+    **Why:** Selectable via UI for optimal performance
     """)
         
         with col2:
-            st.success("""
+            st.success(f"""
     **🤖 Synthesis**
     
-    **Model:** GPT-5.1 (mock)
+    **Model:** Same as orchestrator (user-selectable)
     
     **Role:** Combine multi-source results
     
@@ -1492,18 +1494,22 @@ elif view_mode == "⚙️ Tech":
         st.markdown("""
     | Component | Technology | Purpose |
     |-----------|------------|---------|
-    | **Frontend** | Streamlit | Interactive UI |
+    | **Frontend** | Streamlit 1.x | Interactive UI |
     | **Hosting** | Databricks Apps | Secure deployment |
-    | **AI Orchestration** | Llama 3.1 70B | Query routing |
-    | **Data Query** | Genie (3 spaces) | Natural language to SQL |
-    | **Synthesis** | Foundation Models | Multi-source integration |
+    | **AI Orchestration** | 15+ Foundation Models (user-selectable) | Query routing & synthesis |
+    | **Data Query** | Genie (4 spaces, 1 active) | Natural language to SQL |
+    | **Competitor Intel** | Custom Web Search Agent | Mock competitor data synthesis |
     | **Data Platform** | Unity Catalog | Governance & storage |
-    | **Compute** | SQL Warehouse | Serverless query engine |
-    | **Auth** | PAT Token | API authentication |
+    | **Compute** | SQL Warehouse (serverless) | Real-time query execution |
+    | **Auth** | PAT Token + OAuth M2M | API authentication |
     | **Version Control** | GitHub | Code management |
     | **Languages** | Python 3.11 | Application logic |
+    | **Visualization** | Plotly | Interactive charts |
     
-    **Key Innovation:** Smart routing with graceful fallbacks ensures queries succeed even if individual agents fail.
+    **Key Innovations:** 
+    - Smart routing with graceful fallbacks ensures queries succeed even if individual agents fail
+    - Dynamic model selection allows performance tuning in real-time
+    - Multi-agent caching delivers 90%+ faster demo repeats
     """)
         
         # How to check Genie calls in Databricks
