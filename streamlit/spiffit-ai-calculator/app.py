@@ -35,7 +35,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.9.3-SPIFFIT"  # 🎨 Fixed: Create pivot table locally instead of Genie (ensures chart shows both MRR & Payout)
+APP_VERSION = "v3.9.4-SPIFFIT"  # 🐛 Fixed: Flexible column detection for pivot table (handles any column name variation)
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"🎸 Spiffit v{APP_VERSION} - Deployed: {DEPLOYMENT_TIME}")
 
@@ -634,29 +634,58 @@ o Customers with existing Voice products who are adding additional, incremental 
                     
                     detailed_df = st.session_state.detailed_voice_data
                     logger.info(f"📊 Creating pivot from {len(detailed_df)} detailed rows")
+                    logger.info(f"📊 Available columns in detailed data: {list(detailed_df.columns)}")
                     
-                    # Create pivot table
-                    pivot_df = detailed_df.groupby('Opportunity_Owner').agg({
-                        'Total_MRR': 'sum',
-                        'Incentive_Payout': 'sum'
-                    }).reset_index()
+                    # Detect column names flexibly (case-insensitive, handles variations)
+                    mrr_col = None
+                    payout_col = None
+                    owner_col = None
                     
-                    # Sort by Total MRR descending
-                    pivot_df = pivot_df.sort_values('Total_MRR', ascending=False)
+                    for col in detailed_df.columns:
+                        col_lower = col.lower().replace('_', '').replace(' ', '')
+                        if 'mrr' in col_lower and not mrr_col:
+                            mrr_col = col
+                            logger.info(f"✅ Found MRR column: {col}")
+                        if ('incentive' in col_lower or 'payout' in col_lower) and not payout_col:
+                            payout_col = col
+                            logger.info(f"✅ Found Payout column: {col}")
+                        if 'owner' in col_lower and 'manager' not in col_lower and not owner_col:
+                            owner_col = col
+                            logger.info(f"✅ Found Owner column: {col}")
                     
-                    # Rename columns to match expected format
-                    pivot_df = pivot_df.rename(columns={
-                        'Opportunity_Owner': 'Opportunity_Owner',
-                        'Total_MRR': 'Total_MRR',
-                        'Incentive_Payout': 'Incentive_Payout'
-                    })
-                    
-                    logger.info(f"✅ Created pivot table with {len(pivot_df)} owners")
-                    logger.info(f"📊 Pivot columns: {list(pivot_df.columns)}")
-                    
-                    # Display the pivot data with chart
-                    has_data = True
-                    df = pivot_df
+                    # Validate we have required columns
+                    if not mrr_col:
+                        logger.error(f"❌ No MRR column found in: {list(detailed_df.columns)}")
+                        has_data = False
+                    elif not payout_col:
+                        logger.error(f"❌ No Payout column found in: {list(detailed_df.columns)}")
+                        has_data = False
+                    elif not owner_col:
+                        logger.error(f"❌ No Owner column found in: {list(detailed_df.columns)}")
+                        has_data = False
+                    else:
+                        # Create pivot table with detected columns
+                        pivot_df = detailed_df.groupby(owner_col).agg({
+                            mrr_col: 'sum',
+                            payout_col: 'sum'
+                        }).reset_index()
+                        
+                        # Sort by MRR descending
+                        pivot_df = pivot_df.sort_values(mrr_col, ascending=False)
+                        
+                        # Rename columns to standardized names for display
+                        pivot_df = pivot_df.rename(columns={
+                            owner_col: 'Opportunity_Owner',
+                            mrr_col: 'Total_MRR',
+                            payout_col: 'Incentive_Payout'
+                        })
+                        
+                        logger.info(f"✅ Created pivot table with {len(pivot_df)} owners")
+                        logger.info(f"📊 Pivot columns: {list(pivot_df.columns)}")
+                        
+                        # Display the pivot data with chart
+                        has_data = True
+                        df = pivot_df
                 else:
                     has_data = False
                     logger.error("❌ No detailed voice data available for pivot")
