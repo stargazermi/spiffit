@@ -35,7 +35,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.9.4-SPIFFIT"  # 🐛 Fixed: Flexible column detection for pivot table (handles any column name variation)
+APP_VERSION = "v3.9.5-SPIFFIT"  # 🐛 Critical: Convert string columns to numeric before pivot aggregation
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"🎸 Spiffit v{APP_VERSION} - Deployed: {DEPLOYMENT_TIME}")
 
@@ -664,8 +664,15 @@ o Customers with existing Voice products who are adding additional, incremental 
                         logger.error(f"❌ No Owner column found in: {list(detailed_df.columns)}")
                         has_data = False
                     else:
+                        # Convert numeric columns to proper numeric types (they may be strings from Genie)
+                        detailed_df_copy = detailed_df.copy()
+                        detailed_df_copy[mrr_col] = pd.to_numeric(detailed_df_copy[mrr_col], errors='coerce')
+                        detailed_df_copy[payout_col] = pd.to_numeric(detailed_df_copy[payout_col], errors='coerce')
+                        
+                        logger.info(f"🔢 Converted columns to numeric: {mrr_col}={detailed_df_copy[mrr_col].dtype}, {payout_col}={detailed_df_copy[payout_col].dtype}")
+                        
                         # Create pivot table with detected columns
-                        pivot_df = detailed_df.groupby(owner_col).agg({
+                        pivot_df = detailed_df_copy.groupby(owner_col).agg({
                             mrr_col: 'sum',
                             payout_col: 'sum'
                         }).reset_index()
