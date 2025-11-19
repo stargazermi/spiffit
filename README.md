@@ -3,7 +3,7 @@
 **AI-Powered Sales Incentive Intelligence Platform**  
 *Powered by multi-agent AI • Databricks Genie • 100% pure hackathon energy!*
 
-[![Version](https://img.shields.io/badge/version-v3.7.6-blue)]()
+[![Version](https://img.shields.io/badge/version-v3.9.6-blue)]()
 [![Databricks](https://img.shields.io/badge/Databricks-Apps-red)]()
 [![AI](https://img.shields.io/badge/AI-Multi--Agent-green)]()
 
