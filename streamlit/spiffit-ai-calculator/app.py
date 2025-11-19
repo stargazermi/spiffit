@@ -35,7 +35,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.9.6-SPIFFIT"  # 🎸 Demo Ready: All fixes complete, chart displays correctly!
+APP_VERSION = "v3.9.8-SPIFFIT"  # 🎸 Live Demo: Multi-agent AI with 15+ Foundation Models!
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"🎸 Spiffit v{APP_VERSION} - Deployed: {DEPLOYMENT_TIME}")
 
