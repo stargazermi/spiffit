@@ -35,7 +35,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.8.3-SPIFFIT"  # 🐛 Fixed: Added caching to automated demo's next month query
+APP_VERSION = "v3.9.0-SPIFFIT"  # 📊 Enhanced: Genie-style bar chart with value labels & colors
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"🎸 Spiffit v{APP_VERSION} - Deployed: {DEPLOYMENT_TIME}")
 
@@ -205,7 +205,18 @@ def extract_and_display_genie_data(answer_text, key_prefix="data", display_ui=Tr
                 st.dataframe(df, use_container_width=True)
             
             # Create visualization if we have the right columns
-            if display_ui and 'Incentive_Payout' in df.columns and 'Total_MRR' in df.columns:
+            # Support multiple column name variations from Genie
+            mrr_col = None
+            payout_col = None
+            
+            for col in df.columns:
+                col_lower = col.lower().replace('_', '').replace(' ', '')
+                if 'mrr' in col_lower and not mrr_col:
+                    mrr_col = col
+                if ('incentive' in col_lower or 'payout' in col_lower) and not payout_col:
+                    payout_col = col
+            
+            if display_ui and mrr_col and payout_col:
                 st.subheader("📈 MRR and Incentive Payout")
                 
                 # Prepare data for chart
@@ -218,7 +229,7 @@ def extract_and_display_genie_data(answer_text, key_prefix="data", display_ui=Tr
                         owner_col = col
                         break
                 
-                # Create grouped bar chart
+                # Create grouped bar chart (matching Genie UI style)
                 fig = go.Figure()
                 
                 # Determine x-axis values
@@ -229,29 +240,42 @@ def extract_and_display_genie_data(answer_text, key_prefix="data", display_ui=Tr
                     x_values = chart_df.index
                     x_title = "Opportunity ID"
                 
-                # Add MRR bars
+                # Add MRR bars (teal/blue like Genie)
                 fig.add_trace(go.Bar(
                     x=x_values,
-                    y=chart_df['Total_MRR'],
-                    name='Total MRR',
-                    marker_color='lightblue'
+                    y=chart_df[mrr_col],
+                    name='Sum_MRR',
+                    marker_color='rgb(31, 119, 180)',  # Blue matching Genie
+                    text=chart_df[mrr_col].apply(lambda x: f'${x:,.0f}'),
+                    textposition='outside'
                 ))
                 
-                # Add Incentive Payout bars
+                # Add Incentive Payout bars (orange/yellow like Genie)
                 fig.add_trace(go.Bar(
                     x=x_values,
-                    y=chart_df['Incentive_Payout'],
-                    name='Incentive Payout',
-                    marker_color='darkblue'
+                    y=chart_df[payout_col],
+                    name='Sum_Incentive_Payout',
+                    marker_color='rgb(255, 127, 14)',  # Orange matching Genie
+                    text=chart_df[payout_col].apply(lambda x: f'${x:,.0f}'),
+                    textposition='outside'
                 ))
                 
                 fig.update_layout(
                     title=f"Sum of MRR and Incentive Payout by {x_title}",
                     xaxis_title=x_title,
-                    yaxis_title="Amount",
+                    yaxis_title="Amount ($)",
                     barmode='group',
-                    height=400,
-                    xaxis={'tickangle': -45} if owner_col else {}
+                    height=500,
+                    xaxis={'tickangle': -45} if owner_col else {},
+                    showlegend=True,
+                    legend=dict(
+                        orientation="h",
+                        yanchor="bottom",
+                        y=1.02,
+                        xanchor="right",
+                        x=1
+                    ),
+                    font=dict(size=12)
                 )
                 
                 st.plotly_chart(fig, use_container_width=True)
