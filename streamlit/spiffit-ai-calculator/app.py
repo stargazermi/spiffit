@@ -35,7 +35,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Version and deployment tracking
-APP_VERSION = "v3.7.6-SPIFFIT"  # 🔧 Fixed generic query routing to default to Voice Genie
+APP_VERSION = "v3.8.0-SPIFFIT"  # 🎯 Dynamic orchestrator model selection + UI in Demo tab
 DEPLOYMENT_TIME = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"🎸 Spiffit v{APP_VERSION} - Deployed: {DEPLOYMENT_TIME}")
 
@@ -311,7 +311,7 @@ def extract_and_display_genie_data(answer_text, key_prefix="data", display_ui=Tr
 
 # Initialize AI components
 @st.cache_resource
-def init_ai():
+def init_ai(orchestrator_model="databricks-gpt-5-1"):
     """Initialize AI helper and parser (cached)"""
     # Read Genie space ID from environment variable
     genie_space_id = os.getenv("GENIE_SPACE_ID")
@@ -352,14 +352,18 @@ def init_ai():
         genie_analytics_id=os.getenv("GENIE_ANALYTICS_SPACE_ID"),
         genie_market_id=os.getenv("GENIE_MARKET_SPACE_ID"),
         genie_voice_activations_id=os.getenv("GENIE_VOICE_ACTIVATIONS_SPACE_ID"),
-        orchestrator_model="databricks-gpt-5-1"  # Use GPT-5.1 from serving endpoints
+        orchestrator_model=orchestrator_model  # Use selected model for routing & synthesis
     )
     
     return ai, parser, multi_agent
 
+# Initialize orchestrator model selection
+if 'orchestrator_model' not in st.session_state:
+    st.session_state.orchestrator_model = "databricks-gpt-5-1"  # Default to GPT-5.1
+
 # Only initialize if we're past the config page
 if 'ai' not in st.session_state:
-    st.session_state.ai, st.session_state.parser, st.session_state.multi_agent = init_ai()
+    st.session_state.ai, st.session_state.parser, st.session_state.multi_agent = init_ai(st.session_state.orchestrator_model)
 
 # Main app - "Spiff It" theme!
 st.title("⚡ Spiffit - When SPIFFs Get Tough, You Must Spiff It!")
@@ -404,6 +408,64 @@ with st.sidebar:
         
         if st.button("🎯 Next Month's Play", use_container_width=True, key="demo_sidebar_next"):
             st.session_state.demo_input = "Based on our sales data and competitor intel, what SPIFFs should we offer next month?"
+        
+        st.markdown("---")
+        st.markdown("#### 🤖 AI Brain Settings:")
+        
+        # Orchestrator model selector
+        model_options = [
+            # 🏆 Tier 1: Best Overall (Recommended)
+            "databricks-gpt-5-1",                           # ⭐ GPT-5.1 (Latest OpenAI)
+            "databricks-claude-sonnet-4-5",                 # ⭐ Claude Sonnet 4.5 (Latest Anthropic)
+            "databricks-meta-llama-3-3-70b-instruct",       # ⭐ Llama 3.3 70B (Newest Meta)
+            "databricks-llama-4-maverick",                  # ⭐ Llama 4 Maverick (Cutting edge)
+            
+            # 💎 Tier 2: Premium (Most Powerful)
+            "databricks-claude-opus-4-1",                   # Most powerful reasoning
+            "databricks-gpt-5",                             # GPT-5
+            "databricks-meta-llama-3-1-405b-instruct",      # Largest model (405B)
+            "databricks-gemini-2-5-pro",                    # Google Gemini 2.5 Pro
+            "databricks-gpt-oss-120b",                      # Custom GPT 120B
+            
+            # ⚡ Tier 3: Fast & Efficient
+            "databricks-gpt-5-mini",                        # GPT-5 Mini
+            "databricks-gpt-5-nano",                        # GPT-5 Nano (Fastest)
+            "databricks-gemini-2-5-flash",                  # Gemini Flash (Fast)
+            "databricks-meta-llama-3-1-8b-instruct",        # Llama 8B (Budget)
+            
+            # 🎨 Other Options
+            "databricks-claude-opus-4",                     # Claude Opus 4
+            "databricks-claude-sonnet-4",                   # Claude Sonnet 4
+            "databricks-claude-3-7-sonnet",                 # Claude 3.7 Sonnet
+            "databricks-gpt-oss-20b",                       # Custom GPT 20B
+            "databricks-gemma-3-12b",                       # Gemma 3 12B
+        ]
+        
+        # Find current model index
+        try:
+            current_index = model_options.index(st.session_state.orchestrator_model)
+        except ValueError:
+            current_index = 0  # Default to GPT-5.1 if not found
+        
+        orchestrator_model_demo = st.selectbox(
+            "Agent Brain (Orchestrator)",
+            model_options,
+            index=current_index,
+            key="orchestrator_demo",
+            help="Which LLM the multi-agent uses for routing & synthesis"
+        )
+        
+        # Update orchestrator model and reinitialize if changed
+        if orchestrator_model_demo != st.session_state.orchestrator_model:
+            st.session_state.orchestrator_model = orchestrator_model_demo
+            # Clear cache and reinitialize with new model
+            st.cache_resource.clear()
+            st.session_state.ai, st.session_state.parser, st.session_state.multi_agent = init_ai(orchestrator_model_demo)
+            st.success(f"🔄 Switched to {orchestrator_model_demo}")
+            st.rerun()
+        
+        st.caption("🧠 **Multi-Agent Always Active:**")
+        st.caption("✅ Genie Spaces  \n✅ Web Search  \n✅ Smart Routing")
 
 # ============================================================
 # 🎬 DEMO VIEW - Clean presentation view with automated story
@@ -768,38 +830,56 @@ elif view_mode == "⚙️ Tech":
         st.header("⚙️ Configuration")
         
         # Foundation Model for the orchestrator/agent brain
+        model_options_tech = [
+            # 🏆 Tier 1: Best Overall (Recommended)
+            "databricks-gpt-5-1",                           # ⭐ GPT-5.1 (Latest OpenAI)
+            "databricks-claude-sonnet-4-5",                 # ⭐ Claude Sonnet 4.5 (Latest Anthropic)
+            "databricks-meta-llama-3-3-70b-instruct",       # ⭐ Llama 3.3 70B (Newest Meta)
+            "databricks-llama-4-maverick",                  # ⭐ Llama 4 Maverick (Cutting edge)
+            
+            # 💎 Tier 2: Premium (Most Powerful)
+            "databricks-claude-opus-4-1",                   # Most powerful reasoning
+            "databricks-gpt-5",                             # GPT-5
+            "databricks-meta-llama-3-1-405b-instruct",      # Largest model (405B)
+            "databricks-gemini-2-5-pro",                    # Google Gemini 2.5 Pro
+            "databricks-gpt-oss-120b",                      # Custom GPT 120B
+            
+            # ⚡ Tier 3: Fast & Efficient
+            "databricks-gpt-5-mini",                        # GPT-5 Mini
+            "databricks-gpt-5-nano",                        # GPT-5 Nano (Fastest)
+            "databricks-gemini-2-5-flash",                  # Gemini Flash (Fast)
+            "databricks-meta-llama-3-1-8b-instruct",        # Llama 8B (Budget)
+            
+            # 🎨 Other Options
+            "databricks-claude-opus-4",                     # Claude Opus 4
+            "databricks-claude-sonnet-4",                   # Claude Sonnet 4
+            "databricks-claude-3-7-sonnet",                 # Claude 3.7 Sonnet
+            "databricks-gpt-oss-20b",                       # Custom GPT 20B
+            "databricks-gemma-3-12b",                       # Gemma 3 12B
+        ]
+        
+        # Find current model index
+        try:
+            current_index_tech = model_options_tech.index(st.session_state.orchestrator_model)
+        except ValueError:
+            current_index_tech = 0  # Default to GPT-5.1 if not found
+        
         model_choice = st.selectbox(
             "🤖 Agent Brain (Orchestrator)",
-            [
-                # 🏆 Tier 1: Best Overall (Recommended)
-                "databricks-gpt-5-1",                           # ⭐ GPT-5.1 (Latest OpenAI)
-                "databricks-claude-sonnet-4-5",                 # ⭐ Claude Sonnet 4.5 (Latest Anthropic)
-                "databricks-meta-llama-3-3-70b-instruct",       # ⭐ Llama 3.3 70B (Newest Meta)
-                "databricks-llama-4-maverick",                  # ⭐ Llama 4 Maverick (Cutting edge)
-                
-                # 💎 Tier 2: Premium (Most Powerful)
-                "databricks-claude-opus-4-1",                   # Most powerful reasoning
-                "databricks-gpt-5",                             # GPT-5
-                "databricks-meta-llama-3-1-405b-instruct",      # Largest model (405B)
-                "databricks-gemini-2-5-pro",                    # Google Gemini 2.5 Pro
-                "databricks-gpt-oss-120b",                      # Custom GPT 120B
-                
-                # ⚡ Tier 3: Fast & Efficient
-                "databricks-gpt-5-mini",                        # GPT-5 Mini
-                "databricks-gpt-5-nano",                        # GPT-5 Nano (Fastest)
-                "databricks-gemini-2-5-flash",                  # Gemini Flash (Fast)
-                "databricks-meta-llama-3-1-8b-instruct",        # Llama 8B (Budget)
-                
-                # 🎨 Other Options
-                "databricks-claude-opus-4",                     # Claude Opus 4
-                "databricks-claude-sonnet-4",                   # Claude Sonnet 4
-                "databricks-claude-3-7-sonnet",                 # Claude 3.7 Sonnet
-                "databricks-gpt-oss-20b",                       # Custom GPT 20B
-                "databricks-gemma-3-12b",                       # Gemma 3 12B
-            ],
+            model_options_tech,
+            index=current_index_tech,
+            key="orchestrator_tech",
             help="Which LLM the multi-agent uses for routing & synthesis (15 models available!)"
         )
-        st.session_state.ai.model_name = model_choice
+        
+        # Update orchestrator model and reinitialize if changed
+        if model_choice != st.session_state.orchestrator_model:
+            st.session_state.orchestrator_model = model_choice
+            # Clear cache and reinitialize with new model
+            st.cache_resource.clear()
+            st.session_state.ai, st.session_state.parser, st.session_state.multi_agent = init_ai(model_choice)
+            st.success(f"🔄 Switched to {model_choice}")
+            st.rerun()
         
         st.caption("🧠 **Multi-Agent Always Active:**")
         st.caption("✅ 4 Genie Spaces  \n✅ Web Search  \n✅ Smart Routing")
